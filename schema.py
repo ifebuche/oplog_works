@@ -1,3 +1,5 @@
 REDHSHIFT_TABLE_COLUMNS = {
-       'customer': ['id', 'first_name', 'last_name', 'phone', 'email', 'address', 'city',  'zip_code', 'state', 'country', 'dob'],
+       'customer': ['_id', 'username', 'name', 'address', 'birthdate', 'email', 'accounts'],
+       'transactions': ['_id', 'account_id', 'transaction_count', 'bucket_start_date', 'bucket_end_date'],
+       'accounts': ['_id', 'account_id', 'limit']
        }

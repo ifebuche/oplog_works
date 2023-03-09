@@ -11,7 +11,7 @@ import pymongo
 import time
 from systems import Connector
 from systems.preprocess_func import date_convert
-from systems.util import get_last_run, append_last_run, timestamp_to_bson_ts, send_mail
+from systems.util import append_last_run, timestamp_to_bson_ts, send_mail
 from schema import REDHSHIFT_TABLE_COLUMNS
 import warnings
 from loader import redshift_s3_write
@@ -33,10 +33,9 @@ def oplog_extraction():
     start_extract_time = datetime.now()
 
     cursor = oplog_con.find({'ts': {'$gt': ts},
-                            'ns' :{'$regex' : '^kbanalytics.invoices|^kbanalytics.fleets|^kbanalytics.inflowtransactions|^kbanalytics.messages|^kbanalytics.trips|^kbanalytics.lossrecoveries|^kbanalytics.transactions|^kbanalytics.triphistories|^kbanalytics.customerconfigs|^kbanalytics.lossrecoveries|^kbanalytics.kbcare_productrequests|^kbanalytics.kbcare_vendorpayments|^kbanalytics.ksafe_incidents|^kbanalytics.incidence_prediction|^kbanalytics.wallets|^kbanalytics.customers|^kbanalytics.partnerconfigs|^kbanalytics.products|^kbanalytics.vouchers|^kbanalytics.payfastacustomers|^kbanalytics.vendor_products|\
-                                               ^kbanalytics.paymentchannels|^kbanalytics.payfastapaymentrequests|^kbanalytics.requests|^kbanalytics.beneficiaries|^kbanalytics.freightrequests|^kbanalytics.truck_trackers|^kbanalytics.ksafe_allocations'}},
-                            cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
-                            oplog_replay=True)
+                        'ns' :{'$regex' : '^sample_analytics.customers|^sample_analytics.accounts|^sample_analytics.transactions'}},
+                        cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
+                        oplog_replay=True)
 
 
     data_dict = {}
@@ -46,12 +45,7 @@ def oplog_extraction():
 
 
 
-    all_collection = ['fleets', 'inflowtransactions', 'triphistories','invoices',
-                      'transactions', 'customerconfigs', 'kbcare_productrequests', 'kbcare_vendorpayments', 'ksafe_incidents',
-                      'incidence_prediction', 'wallets', 'customers', 'vendor_products', 'payfastacustomers', 'payfastatransactions', 
-                      'vouchers','products', 'partnerconfigs', 'requests', 'beneficiaries', 'paymentchannels', 'payfastapaymentrequests',
-                      'freightrequests', 'truck_trackers', 'ksafe_allocations', 'trips','lossrecoveries'
-                    ]
+    all_collection = ['customers', 'accounts', 'transactions']
 
 
     ######################## Context ##########################

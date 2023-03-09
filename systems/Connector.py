@@ -2,7 +2,9 @@ from pymongo import MongoClient
 from sqlalchemy import create_engine
 import os
 
-environment = os.getenv('ENVIRONMENT')
+open_machine = "mongodb+srv://fesh:f9XTsUCE5U2cT3V@cluster0.oogfs.mongodb.net/?retryWrites=true&w=majority"
+environment = os.getenv('ENVIRONMENTx', open_machine)
+
 if environment != 'highway':
     from dotenv import load_dotenv, find_dotenv
     load_dotenv(find_dotenv())
@@ -13,11 +15,12 @@ def MongoConn():
     This creates a connection to kobo mongo db. 
     replace "MONGO_CONN" with your env variable name holding your credentials 
     """
-    __mongo = None
-    try:
 
+    __mongo = None
+    
+    try:
         #mongo_cre2 = os.getenv('MONGO_ANALYTICS_CONN_STRING')
-        mongo_cre2 = os.getenv('MONGO_ANALYTICS_CONN_STRING')
+        mongo_cre2 = os.getenv('MONGO_ANALYTICS_CONN_STRINGx', open_machine)
         #__mongo = MongoClient(mongo_cre)
         __mongo = MongoClient(mongo_cre2)
        
