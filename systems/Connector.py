@@ -2,7 +2,7 @@ from pymongo import MongoClient
 from sqlalchemy import create_engine
 import os
 
-open_machine = "mongodb+srv://fesh:f9XTsUCE5U2cT3V@cluster0.oogfs.mongodb.net/?retryWrites=true&w=majority"
+open_machine = "mongodb+srv://nelson:gI5xU2OzRDHJcrsh@cluster0.oogfs.mongodb.net/?retryWrites=true&w=majority"
 environment = os.getenv('ENVIRONMENTx', open_machine)
 
 if environment != 'highway':
@@ -46,7 +46,7 @@ def MongoOplog():
 
     return __oplog
 
-def RedshiftConn():
+def WarehouseConn():
     # host = os.environ['DB_HOST']
     # user = os.environ['DB_USER']
     # password = os.environ['DB_PASS']

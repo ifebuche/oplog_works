@@ -29,9 +29,9 @@ def s3_upload(tableName, data, year=year, month=month, day=day):
     data: df - dataframe to be written
     """
     if environment != 'highway':
-        loc = f's3://streaming-etl/oplog_works_stage/{tableName}/{year}/{month}/{day}/{tableName}_{dt.now().time()}.parquet'
+        loc = f's3://MI-ETL/oplog_works_stage/{tableName}/{year}/{month}/{day}/{tableName}_{dt.now().time()}.parquet'
     else:
-        loc = f's3://streaming-etl/oplog-works/{tableName}/{year}/{month}/{day}/{tableName}_{dt.now().time()}.parquet'
+        loc = f's3://MI-ETL/oplog_works/{tableName}/{year}/{month}/{day}/{tableName}_{dt.now().time()}.parquet'
     try:
         wr.s3.to_parquet(df=data, path=loc)
         print("Wrote to S3 successfully!")
