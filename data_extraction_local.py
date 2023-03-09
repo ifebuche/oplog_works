@@ -16,6 +16,8 @@ from schema import REDHSHIFT_TABLE_COLUMNS
 import warnings
 from loader import redshift_s3_write
 
+
+
 environment = os.getenv('ENVIRONMENT')
 
 
