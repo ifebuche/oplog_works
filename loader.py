@@ -3,9 +3,9 @@ import os
 import random
 import awswrangler as wr
 from systems.util import send_mail
-from systems.Connector import RedshiftConn
+from systems.Connector import WarehouseConn
 
-engine = RedshiftConn()
+engine = WarehouseConn()
 environment = os.getenv('ENVIRONMENT')
 
 
@@ -59,14 +59,14 @@ def insert_update_record(engine, df, targetTable, pk):
 
     print(f"Incoming table is {targetTable}")
     
-    create = f"create table if not exists {temp} (like analytics_{targetTable}_oplog);"
+    create = f"create table if not exists {temp} (like {targetTable});"
     drop = f"drop table {temp}"
     transact = f"""
                 begin transaction;
 
-                delete from analytics_{targetTable}_oplog using {temp} where analytics_{targetTable}_oplog.{pk} = {temp}.{pk};
+                delete from {targetTable} using {temp} where {targetTable}.{pk} = {temp}.{pk};
 
-                insert into analytics_{targetTable}_oplog select * from {temp};
+                insert into {targetTable} select * from {temp};
 
                 drop table {temp};
 

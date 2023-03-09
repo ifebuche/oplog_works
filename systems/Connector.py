@@ -54,8 +54,8 @@ def WarehouseConn():
     host = os.getenv('DB_HOST')
     user = os.getenv('DB_USER')
     password = os.getenv('DB_PASS')
-    port = 5439
-    db = 'dev'
+    port = 5432
+    db = 'sample_analytics'
 
     
     engine = create_engine(f'postgresql://{user}:{password}@{host}:{str(port)}/{db}')

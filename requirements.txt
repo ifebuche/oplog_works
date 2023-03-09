@@ -1,0 +1,4 @@
+awswrangler
+pymongo
+pandas
+bson
