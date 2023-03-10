@@ -47,13 +47,9 @@ def MongoOplog():
     return __oplog
 
 def WarehouseConn():
-    # host = os.environ['DB_HOST']
-    # user = os.environ['DB_USER']
-    # password = os.environ['DB_PASS']
-
-    host = os.getenv('DB_HOST')
-    user = os.getenv('DB_USER')
-    password = os.getenv('DB_PASS')
+    host = os.getenv('DB_HOSTx')
+    user = os.getenv('DB_USERx')
+    password = os.getenv('DB_PASSx')
     port = 5432
     db = 'sample_analytics'
 
@@ -61,3 +57,20 @@ def WarehouseConn():
     engine = create_engine(f'postgresql://{user}:{password}@{host}:{str(port)}/{db}')
     
     return engine
+
+
+# import mietl
+
+# source_schema = ['id', 'name', 'address', 'dob']
+# destination_schema = ['id', 'name', 'address', 'age']
+
+# source = mietl.Source(*kwargs) #NoSQL source
+# destination = mietl.Destination(*kwargs)
+# extraction_engine = mietl.Extraction(source_schema, destination_schema)
+
+
+
+
+
+
+
