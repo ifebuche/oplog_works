@@ -19,9 +19,7 @@ def MongoConn():
     __mongo = None
     
     try:
-        #mongo_cre2 = os.getenv('MONGO_ANALYTICS_CONN_STRING')
         mongo_cre2 = os.getenv('MONGO_ANALYTICS_CONN_STRINGx', open_machine)
-        #__mongo = MongoClient(mongo_cre)
         __mongo = MongoClient(mongo_cre2)
        
 
