@@ -12,9 +12,9 @@ import time
 from systems import Connector
 from systems.preprocess_func import date_convert
 from systems.util import append_last_run, timestamp_to_bson_ts, send_mail
-from schema import REDHSHIFT_TABLE_COLUMNS
+from schema import DESTINATION_TABLE_COLUMNS
 import warnings
-from loader import redshift_s3_write
+from loader import warehouse_cdc_write
 
 
 
@@ -156,8 +156,11 @@ def oplog_extraction():
     """
 
 
-
-    #Processing time : This records time take to precesss each table. operations here include data cleaning, data type
+    #############################################################################################
+    ####################### Split out this part as a different job: transformation ##############
+    #############################################################################################
+   
+    #Processing time : This records time take to precesss each table. operations here include data cleaning, data type 
     processed_dict = {}
     if data_dict:
         for k, v in data_dict.items():
@@ -175,13 +178,16 @@ def oplog_extraction():
     create this column and fill with NaN. And finally remove columns that arent needed 
     """
     
+    ##############################################################################################
+    ####################### Consider splitting out schema resolution #############################
+    ##############################################################################################
     for key in processed_dict.keys():
-        if key in REDHSHIFT_TABLE_COLUMNS.keys():
-            for col in REDHSHIFT_TABLE_COLUMNS[key]:
+        if key in DESTINATION_TABLE_COLUMNS.keys():
+            for col in DESTINATION_TABLE_COLUMNS[key]:
                 if col not in processed_dict[key].columns:
                     processed_dict[key][col] = np.nan
         
-        processed_dict[key] = processed_dict[key][REDHSHIFT_TABLE_COLUMNS[key]]
+        processed_dict[key] = processed_dict[key][DESTINATION_TABLE_COLUMNS[key]]
         processed_dict[key].to_csv(key + '.csv', index=False)
         #Convert bson ObjectIdto string
         # print('Before conversion of ObjectId', '\n', [type(line) for line in processed_dict[key]['_id']])
@@ -215,38 +221,9 @@ def handler(event = None, context = None):
                     if type(temp_table.iloc[0]) == ObjectId:
                         table[col] = [str(line) for line in table[col]]
 
-
-            if tableName == 'fleets':
-                #and another for fleets in particular
-                #########################3 Give us a more elegant handling here ################################
-                # Lets peep the first item of every col asking the type they are. If they are bson, convert it to str ===> fixed in LINE 194
-                #########################################################################################################
-                table['pooloutdate'] = table[table['pooloutdate'].notnull()]['pooloutdate'].apply(
-                lambda x: pd.to_datetime(int(float(x)) / 1000, unit='s') 
-                if (len(str(x)) == 15 and isinstance(x, float))
-                or (len(str(x)) == 13 and isinstance(x, str))
-                else pd.to_datetime(x)
-                )
-                table['pooloutdate'] = pd.to_datetime(table['pooloutdate'])
-                incorrect_dates = ['0', '0000-00-00 00:00:00', '', 'NULL', np.nan]
-                table.loc[table['pooldate'].isin(incorrect_dates), 'pooldate'] = pd.NaT
-                table.loc[:, 'pooldate'] = pd.to_datetime(table['pooldate'], errors='coerce')
-
-            elif tableName == 'dropoff':
-                table['deliverydate'] = table[table['deliverydate'].notnull()]['deliverydate'].apply(lambda x: date_convert(x))
-
-            elif tableName == "trips":
-                table['deliverydate'] = pd.to_datetime(table['deliverydate'])
-            
-            elif tableName == 'lossrecoveries_assigned':
-                table['actiontime'] = table[table['actiontime'].notnull()]['actiontime'].apply(lambda x:date_convert(x))
-
-            elif tableName == 'lossrecoveries_detached':
-                table['actiontime'] = table[table['actiontime'].notnull()]['actiontime'].apply(lambda x:date_convert(x))
-
             try:
                 print(f'+++++ {tableName} +++++')
-                redshift_s3_write(tableName, table)
+                warehouse_cdc_write(tableName, table)
             except Exception as e:
                 send_mail(message=f"Error Writing to Redshift", subject='Failure!')
 
