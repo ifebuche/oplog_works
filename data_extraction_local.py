@@ -14,12 +14,15 @@ from systems.preprocess_func import date_convert
 from systems.util import append_last_run, timestamp_to_bson_ts, send_mail
 from schema import DESTINATION_TABLE_COLUMNS
 import warnings
-from loader import warehouse_cdc_write
+from loader import Loader
 
 
 
 environment = os.getenv('ENVIRONMENT')
 
+
+source_con = mi_etl.Connector.Source(pormm, kdvsd)
+extracted_doc = mi_etl.data_Extraction.oplog_Extraction(collection_names, source_con)
 
 
 def oplog_extraction():
@@ -223,7 +226,7 @@ def handler(event = None, context = None):
 
             try:
                 print(f'+++++ {tableName} +++++')
-                warehouse_cdc_write(tableName, table)
+                Loader.warehouse_cdc_write(tableName, table)
             except Exception as e:
                 send_mail(message=f"Error Writing to Redshift", subject='Failure!')
 
