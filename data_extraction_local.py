@@ -20,9 +20,27 @@ from loader import Loader
 
 environment = os.getenv('ENVIRONMENT')
 
+#TO DO
+#Folder MI-ETL (parent)
+#   Connector.py 
+#       Source
+        #     mongo
+    # Destination
+        #     s3
+        #     snowflake
+        #     redshift
+#   Data Extraction.py (Class)
+#        oplog_Extraction (Method)
+#           retruns data_dict
+#   Loader.py
+#       already in a class , little fix
+#   Alert
+#       slack: 
+#       email 
+#have Data Extraction.py:
 
-source_con = mi_etl.Connector.Source(pormm, kdvsd)
-extracted_doc = mi_etl.data_Extraction.oplog_Extraction(collection_names, source_con)
+# source_con = mi_etl.Connector.Source(pormm, kdvsd)
+# extracted_doc = mi_etl.data_Extraction.oplog_Extraction(collection_names, source_con)
 
 
 def oplog_extraction():
@@ -141,6 +159,7 @@ def oplog_extraction():
 
     # exract metadata to store in batch_pipe_run_time mongo collection
     stop_date = datetime.now()
+    #save to csv for filtering
     stop_time = time.time()
     extract_time = datetime.now() - start_extract_time
     
