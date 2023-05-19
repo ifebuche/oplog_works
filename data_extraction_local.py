@@ -230,24 +230,26 @@ def handler(event = None, context = None):
         print("Starting S3 and Redshift operations....")
         #write to S3 and Redshift
         for tableName, table in result.items():
+            breakpoint()
             #convert bson
             #Some how there are two loadeddate(loadeddate, loadeddate.1) and this was causing the pipeline to break
             #even when they mean the same thing
             # breakpoint()
             
-            for col in table.columns:
-                temp_table = table[table[col].notnull()][col]
-                if temp_table.empty:
-                    pass
-                else:
-                    if type(temp_table.iloc[0]) == ObjectId:
-                        table[col] = [str(line) for line in table[col]]
+            # for col in table.columns:
+            #     temp_table = table[table[col].notnull()][col]
+            #     if temp_table.empty:
+            #         pass
+            #     else:
+            #         if type(temp_table.iloc[0]) == ObjectId:
+            #             table[col] = [str(line) for line in table[col]]
 
             try:
                 print(f'+++++ {tableName} +++++')
-                Loader.warehouse_cdc_write(tableName, table)
+                Loader.warehouse_cdc_write(tableName=tableName, table=table)
             except Exception as e:
-                send_mail(message=f"Error Writing to Redshift", subject='Failure!')
+                #send_mail(message=f"Error Writing to Redshift", subject='Failure!')
+                print(e)
 
 
     end_load = datetime.now()

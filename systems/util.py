@@ -88,8 +88,9 @@ if environment != 'highway':
         *inserts a new record in local machine date.csv*
         """
         date = pd.read_csv('date.csv')
+        new_date = pd.DataFrame({'date': time.time()}, index=[0])
         #print('In the append last run function', date)
-        date = date.append({'date': time.time()}, ignore_index=True)
+        date = pd.concat([date, new_date], ignore_index=True)
         date.to_csv('date.csv', index=False)
 
 

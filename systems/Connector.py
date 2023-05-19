@@ -1,8 +1,11 @@
 from pymongo import MongoClient
 from sqlalchemy import create_engine
 import os
+import certifi
 
-open_machine = "mongodb+srv://nelson:gI5xU2OzRDHJcrsh@cluster0.oogfs.mongodb.net/?retryWrites=true&w=majority"
+
+#open_machine = "mongodb+srv://nelson:gI5xU2OzRDHJcrsh@cluster0.oogfs.mongodb.net/?retryWrites=true&w=majority"
+open_machine = "mongodb+srv://joe:R17meEbZWC3ZEcHe@cluster0.oogfs.mongodb.net/?retryWrites=true&w=majority"
 environment = os.getenv('ENVIRONMENTx', open_machine)
 
 if environment != 'highway':
@@ -22,7 +25,7 @@ def MongoConn():
         #mongo_cre2 = os.getenv('MONGO_ANALYTICS_CONN_STRING')
         mongo_cre2 = os.getenv('MONGO_ANALYTICS_CONN_STRINGx', open_machine)
         #__mongo = MongoClient(mongo_cre)
-        __mongo = MongoClient(mongo_cre2)
+        __mongo = MongoClient(mongo_cre2, tlsCAFile=certifi.where())
        
 
     except Exception as e:
@@ -47,9 +50,9 @@ def MongoOplog():
     return __oplog
 
 def WarehouseConn():
-    host = os.getenv('DB_HOSTx')
-    user = os.getenv('DB_USERx')
-    password = os.getenv('DB_PASSx')
+    host = os.getenv('DB_HOSTx', '')
+    user = os.getenv('DB_USERx', '')
+    password = os.getenv('DB_PASSx', 'postgresadmin')
     port = 5432
     db = 'sample_analytics'
 
