@@ -6,6 +6,7 @@ class Alert:
     @staticmethod
     def email(message):
         print("Sending email alert")
+        
     @staticmethod
     def sms(message):
         print("Sending SMS alert")
