@@ -25,14 +25,14 @@ class Loader:
     """
     Define Lake and Warehouse options
     """
-    def __init__(self, service):
-        self.resource = None
-        if self.service.lower() == 'aws':
-            self.lake = 's3'
-            self.warehouse = 'postgres'
-        if self.service.lower() == 'azure':
-            self.resource = 'blobstorage'
-            self.warehouse = 'synapse'
+    # def __init__(self, service):
+    #     self.resource = None
+    #     if self.service.lower() == 'aws':
+    #         self.lake = 's3'
+    #         self.warehouse = 'postgres'
+    #     if self.service.lower() == 'azure':
+    #         self.resource = 'blobstorage'
+    #         self.warehouse = 'synapse'
 
 
 

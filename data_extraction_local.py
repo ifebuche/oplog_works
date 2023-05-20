@@ -15,6 +15,7 @@ from systems.util import append_last_run, timestamp_to_bson_ts, send_mail
 from schema import DESTINATION_TABLE_COLUMNS
 import warnings
 from loader import Loader
+from typing import List
 
 
 
@@ -43,7 +44,15 @@ environment = os.getenv('ENVIRONMENT')
 # extracted_doc = mi_etl.data_Extraction.oplog_Extraction(collection_names, source_con)
 
 
-def oplog_extraction():
+def oplog_extraction(extract_all: List[str] =[]):
+
+    """
+    ** extract all : contains the particular collections to be extracted. 
+                     can either be empty or populated . Takes an empty list as
+                     default argument.  
+    
+    """
+
     #Create connection and poll mongo oplog 
     oplog_con = Connector.MongoOplog()
     mongo_client = Connector.MongoConn()
@@ -51,14 +60,25 @@ def oplog_extraction():
 
     # Extract bson timestamp from last run in either mongo or local machine
     ts = timestamp_to_bson_ts()
+
+    # Records the time of run to use as filter for next run
+    next_filter_time = time.time()
     
     #Extraction time -> This includes time from pulling from oplog and usind _ids to extract full document for update operations
     start_extract_time = datetime.now()
 
-    cursor = oplog_con.find({'ts': {'$gt': ts},
-                        'ns' :{'$regex' : '^sample_analytics.customers|^sample_analytics.accounts|^sample_analytics.transactions'}},
+    if extract_all is None:
+        cursor = oplog_con.find({'ts': {'$gt': ts}},
+                        cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
+                        oplog_replay=True)        
+
+    else:
+        extract_all = '|'.join(('^'+n) for n in extract_all)
+        cursor = oplog_con.find({'ts': {'$gt': ts},
+                        'ns' :{'$regex' : extract_all}},
                         cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
                         oplog_replay=True)
+
 
 
     data_dict = {}
@@ -222,31 +242,35 @@ def handler(event = None, context = None):
     """
     Deal.
     """
-    stats, result, extraction_time, stop_date, stop_time = oplog_extraction()
+    stats, result, extraction_time, stop_date, stop_time = oplog_extraction(extract_all=['sample_analytics.customers', 'sample_analytics.transactions'])
     len_tables = len(result.keys())
+
     changed_tables = '|'.join(f"{k} {len(v)}" for k, v in result.items())
     if stats:
         start_load = datetime.now()
         print("Starting S3 and Redshift operations....")
+
+        
         #write to S3 and Redshift
         for tableName, table in result.items():
-            breakpoint()
+            
             #convert bson
             #Some how there are two loadeddate(loadeddate, loadeddate.1) and this was causing the pipeline to break
             #even when they mean the same thing
             # breakpoint()
             
-            # for col in table.columns:
-            #     temp_table = table[table[col].notnull()][col]
-            #     if temp_table.empty:
-            #         pass
-            #     else:
-            #         if type(temp_table.iloc[0]) == ObjectId:
-            #             table[col] = [str(line) for line in table[col]]
+            for col in table.columns:
+                temp_table = table[table[col].notnull()][col]
+                if temp_table.empty:
+                    pass
+                else:
+                    if type(temp_table.iloc[0]) == ObjectId:
+                        table[col] = [str(line) for line in table[col]]
 
             try:
                 print(f'+++++ {tableName} +++++')
-                Loader.warehouse_cdc_write(tableName=tableName, table=table)
+                loader = Loader()
+                loader.warehouse_cdc_write(tableName, table)
             except Exception as e:
                 #send_mail(message=f"Error Writing to Redshift", subject='Failure!')
                 print(e)

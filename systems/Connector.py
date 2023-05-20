@@ -52,7 +52,7 @@ def MongoOplog():
 def WarehouseConn():
     host = os.getenv('DB_HOSTx', '')
     user = os.getenv('DB_USERx', '')
-    password = os.getenv('DB_PASSx', 'postgresadmin')
+    password = os.getenv('DB_PASSx', '')
     port = 5432
     db = 'sample_analytics'
 
