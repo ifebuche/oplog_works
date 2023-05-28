@@ -15,6 +15,7 @@ from systems.util import append_last_run, timestamp_to_bson_ts, send_mail
 from schema import DESTINATION_TABLE_COLUMNS
 import warnings
 from loader import Loader
+from typing import List
 
 
 
@@ -42,23 +43,135 @@ environment = os.getenv('ENVIRONMENT')
 # source_con = mi_etl.Connector.Source(pormm, kdvsd)
 # extracted_doc = mi_etl.data_Extraction.oplog_Extraction(collection_names, source_con)
 
+class DataExtraction:
 
-def oplog_extraction():
+    # @staticmethod
+    # # **** Unsure if its best to have another connection method here ****
+    # def extract_connection(con_string:str, document:str):
+    #     """
+    #     conn_string is the srv mongo_db connection str.
+
+    #     """
+
+    #     # *** This should be moved to the connection class ****
+    #     mongo_con = Connector.MongoConn().document
+    #     oplog_con = Connector.MongoOplog(con_string)
+    #     return mongo_con, oplog_con
+
+    
+    def handle_update_operation(doc, data_dict):
+        data_dict_upddata_dictate = {}
+        collection_name = doc['ns'].split('.')[-1]
+        if collection_name in data_dict:
+            data_dict[collection_name].append(doc['o2']['_id'])
+        else:
+            data_dict[collection_name] = [doc['o2']['_id']]
+
+    def handle_insert_operation(doc, data_dict):  
+        df_dict = doc.get('o')
+        collection_name = doc['ns'].split('.')[-1]
+        if collection_name in data_dict.keys():
+            data_dict[collection_name].append(df_dict)
+        else:
+            data_dict[collection_name] = [df_dict]
+
+    def fix_duplicate_ids(data_dict_update):
+        return {key: list(set(value)) for key, value in data_dict_update.items()}
+    
+    def remove_duplicate_docs(data_dict_insert, data_dict_update):
+        for k, v in data_dict_update.items():
+            final_inserts_list = []
+            insert = data_dict_insert.get(k)
+            if insert:
+                for doc in insert:
+                    if not doc['_id'] in v:
+                        final_inserts_list.append(doc)
+                data_dict_insert[k] = final_inserts_list
+            
+    def extract_entire_doc_from_update(mongo_con, data_dict_update, data_dict):
+        for key, value in data_dict_update.items():
+            collection_name = key 
+            df = mongo_con[collection_name].find({'_id': {"$in" : value}})
+            for d in df:
+                if collection_name in data_dict.keys():
+                    data_dict[collection_name].append(d)
+                                    
+                else:
+                    data_dict[collection_name] = [d]
+
+
+    def extract_oplog_data():
+        data_dict_insert = {}
+        data_dict_update = {}
+
+        for doc in 
+
+    def oplog_extraction(self, con_string:str, document:str, extract_all: List[str] = []):
+       
+        oplog_con = Connector.MongoOplog()
+        mongo_con = Connector.MongoConn().document
+
+        ts = timestamp_to_bson_ts()
+         # Records the time of run to use as filter for next run
+        next_filter_time = time.time()
+        #Extraction time -> This includes time from pulling from oplog and usind _ids to extract full document for update operations
+        start_extract_time = datetime.now()
+
+        if extract_all is None:
+            cursor = oplog_con.find({'ts': {'$gt': ts}},
+                            cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
+                            oplog_replay=True)        
+
+        else:
+            extract_all = '|'.join(('^'+n) for n in extract_all)
+            cursor = oplog_con.find({'ts': {'$gt': ts},
+                            'ns' :{'$regex' : extract_all}},
+                            cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
+                            oplog_replay=True)
+            
+        data_dict_insert = {}
+        data_dict_update = {}
+
+        
+
+
+#Split insert and update into 2 function and seprate in another file
+
+def oplog_extraction(extract_all: List[str] =[]):
+
+    """
+    ** extract all : contains the particular collections to be extracted. 
+                     can either be empty or populated . Takes an empty list as
+                     default argument.  
+    
+    """
+
     #Create connection and poll mongo oplog 
     oplog_con = Connector.MongoOplog()
-    mongo_client = Connector.MongoConn()
-    mongo_con = mongo_client.kbanalytics
+    mongo_con = Connector.MongoConn().sample_analytics
+    #mongo_con = mongo_client.sample_analytics
 
     # Extract bson timestamp from last run in either mongo or local machine
     ts = timestamp_to_bson_ts()
+
+    # Records the time of run to use as filter for next run
+    next_filter_time = time.time()
     
     #Extraction time -> This includes time from pulling from oplog and usind _ids to extract full document for update operations
     start_extract_time = datetime.now()
 
-    cursor = oplog_con.find({'ts': {'$gt': ts},
-                        'ns' :{'$regex' : '^sample_analytics.customers|^sample_analytics.accounts|^sample_analytics.transactions'}},
+    if extract_all is None:
+        cursor = oplog_con.find({'ts': {'$gt': ts}},
+                        cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
+                        oplog_replay=True)        
+        
+    else:
+        extract_all = '|'.join(('^'+n) for n in extract_all)
+        cursor = oplog_con.find({'ts': {'$gt': ts},
+                        'ns' :{'$regex' : extract_all}},
                         cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
                         oplog_replay=True)
+
 
 
     data_dict = {}
@@ -222,14 +335,19 @@ def handler(event = None, context = None):
     """
     Deal.
     """
-    stats, result, extraction_time, stop_date, stop_time = oplog_extraction()
+    stats, result, extraction_time, stop_date, stop_time = oplog_extraction(extract_all=['sample_analytics.customers', 'sample_analytics.transactions'])
     len_tables = len(result.keys())
+
+
     changed_tables = '|'.join(f"{k} {len(v)}" for k, v in result.items())
     if stats:
         start_load = datetime.now()
         print("Starting S3 and Redshift operations....")
+
+        
         #write to S3 and Redshift
         for tableName, table in result.items():
+            
             #convert bson
             #Some how there are two loadeddate(loadeddate, loadeddate.1) and this was causing the pipeline to break
             #even when they mean the same thing
@@ -245,9 +363,11 @@ def handler(event = None, context = None):
 
             try:
                 print(f'+++++ {tableName} +++++')
-                Loader.warehouse_cdc_write(tableName, table)
+                loader = Loader()
+                loader.warehouse_cdc_write(tableName, table)
             except Exception as e:
-                send_mail(message=f"Error Writing to Redshift", subject='Failure!')
+                #send_mail(message=f"Error Writing to Redshift", subject='Failure!')
+                print(e)
 
 
     end_load = datetime.now()

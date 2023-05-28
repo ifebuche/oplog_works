@@ -54,7 +54,7 @@ date.csv
 *.ipynb
 
 *oplog_notebooks
-
+venv
 .env
 *.csv
 *.parquet
