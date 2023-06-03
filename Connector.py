@@ -1,7 +1,8 @@
 import boto3
 import psycopg2
 import pymongo
-import snowflake.connector
+import certifi
+#import snowflake.connector
 
 
 class Connector:
@@ -11,7 +12,7 @@ class Connector:
         @staticmethod
         def mongo(mongo_url):
             print("Connecting to MongoDB...")
-            client = pymongo.MongoClient(mongo_url)
+            client = pymongo.MongoClient(mongo_url, tlsCAFile=certifi.where())
             return client
 
         @staticmethod
