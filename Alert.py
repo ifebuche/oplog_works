@@ -4,6 +4,9 @@ import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from dotenv import load_dotenv
+
+load_dotenv()
 
 import requests
 
@@ -15,6 +18,7 @@ class Alert:
 
         print("Sending Slack alert")
         slack_hook = os.getenv('slack_hook')
+        print(slack_hook)
         slack_message = {'text': message}
 
         response = requests.post(
@@ -27,16 +31,21 @@ class Alert:
             print(f"Failed to send Slack alert. Response: {response.text}")
 
     @staticmethod
-    def email(message, subject='Success'):
+    def email(email_addresses: dict, message: str, subject='Success'):
+        """
+
+        Args:
+            email_addresses (dict): dictionary contiaining email address and name
+            message (str): email body
+            subject (str, optional): email body. Defaults to 'Success'.
+        """
 
         print("Sending email alert")
-        email_addresses = ['ojofemijoseph@gmail.com']
-        names = ['Joe']
         from_address = os.getenv('from_email')
         password = os.getenv('mail_passwod')
         print('Retrieved email details')
         
-        for item, name in zip(email_addresses, names):
+        for item, name in email_addresses.item():
             from_addr = from_address
             to_addr = item
 
@@ -63,7 +72,3 @@ class Alert:
     def sms(message):
         print("Sending SMS alert")
 
-
-Alert().slack('Testing MI-ETL Alert')
-Alert().email('Testing MI-ETL Email')
-Alert().sms('Testing MI-ETL SMS')
