@@ -4,9 +4,6 @@ import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from dotenv import load_dotenv
-
-load_dotenv()
 
 import requests
 
@@ -18,7 +15,7 @@ class Alert:
 
         print("Sending Slack alert")
         slack_hook = os.getenv('slack_hook')
-        print(slack_hook)
+    
         slack_message = {'text': message}
 
         response = requests.post(
