@@ -19,6 +19,7 @@ class DataExtraction:
         self.mongo_con = Connector.Source.mongo(self.mongo_url)
         self.oplog_con = self.mongo_con.local.oplog.rs
 
+
     def handle_update_operation(self, doc, data_dict):
         data_dict = {}
         collection_name = doc['ns'].split('.')[-1]
@@ -52,8 +53,6 @@ class DataExtraction:
             
         return data_dict_insert
     
-    # def email_notif(self, table_length, changed_tables, total_extract_seconds):
-
 
     
     def extract_entire_doc_from_update(self, data_dict_update, data_dict_insert):
@@ -101,10 +100,10 @@ class DataExtraction:
         #Recording metrics for extract metadata
         extract_end_time = datetime.now() - extract_start_time
         table_lenght = len(data_insert.keys())
+        
 
-
-
-        #include email structure here
+        # Need ideas on this alert logic : Do we make it mandatory for uses to have an alert?
+        Alert.email()
         
         
         return data_insert
