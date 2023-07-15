@@ -2,7 +2,7 @@ import boto3
 import psycopg2
 import pymongo
 import certifi
-#import snowflake.connector
+import snowflake.connector
 
 
 class Connector:
@@ -64,3 +64,5 @@ class Connector:
                 password=redshift_details['password']
             )
             return conn
+        
+        
