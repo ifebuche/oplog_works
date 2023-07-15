@@ -157,3 +157,6 @@ class Loader:
             # capture_exception(e)
             msg = f"Error writing to RedshiftConn => {e}"
             print(msg)
+
+    
+    
