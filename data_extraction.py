@@ -2,6 +2,7 @@ import os
 import time
 from datetime import datetime
 import pymongo
+import math
 from pymongo.cursor import Cursor 
 from bson import ObjectId, Timestamp
 from Connector import Connector
@@ -18,6 +19,35 @@ class DataExtraction:
         self.extract_all = extract_all
         self.mongo_con = Connector.Source.mongo(self.mongo_url)
         self.oplog_con = self.mongo_con.local.oplog.rs
+
+    def get_timestamp(self):
+        """
+        This method retrieves the most recent timestamp from the 'metadata' database in MongoDB.
+        If the 'metadata' database does not exist, the method creates it and inserts a document
+        with the current timestamp.
+
+        Returns:
+            last_run (bson.timestamp.Timestamp): The most recent timestamp from the 'metadata' 
+                                                database, or the current timestamp if the 
+                                                'metadata' database was just created.
+        """
+        
+        if "metadata" in self.mongo_con.list_database_names():
+            meta_data = self.mongo_con.metadata
+            last_run_doc = meta_data.find().sort('date', pymongo.DESCENDING).limit(1)
+            for doc in last_run_doc:
+                last_run = doc['timestamp']
+        else:   
+            meta_data = self.mongo_con['metadata']
+            last_run = Timestamp(time=math.ceil(time.time()), inc=0)
+            document = {
+                "timestamp": last_run,  
+            }
+            meta_data.insert_one(document)
+
+        return last_run
+
+        
 
     def handle_update_operation(self, doc, data_dict):
         data_dict = {}
@@ -52,8 +82,6 @@ class DataExtraction:
             
         return data_dict_insert
     
-    # def email_notif(self, table_length, changed_tables, total_extract_seconds):
-
 
     
     def extract_entire_doc_from_update(self, data_dict_update, data_dict_insert):
@@ -101,12 +129,11 @@ class DataExtraction:
         #Recording metrics for extract metadata
         extract_end_time = datetime.now() - extract_start_time
         table_lenght = len(data_insert.keys())
+        
 
-
-
-        #include email structure here
+        # Need ideas on this alert logic : Do we make it mandatory for users to have an alert?
+        Alert.email()
         
         
         return data_insert
-
     

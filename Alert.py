@@ -27,7 +27,7 @@ class Alert:
             print(f"Failed to send Slack alert. Response: {response.text}")
 
     @staticmethod
-    def email(email_addresses: dict, data: dict, message: str, from_add:str,
+    def email(email_addresses: dict, data: dict, from_add:str,
                password:str, time_of_run, total_extract_seconds,
                total_collections_extracted, total_collections, subject='Success'):
         
