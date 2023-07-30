@@ -2,3 +2,12 @@ awswrangler
 pymongo
 pandas
 bson
+awswrangler
+pymongo
+pandas
+bson
+certifi
+psycopg2-bianry
+snowflake-connector-python
+sqlalchemy
+snowflake-sqlalchemy
