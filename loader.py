@@ -2,16 +2,11 @@ from datetime import datetime as dt
 import os
 import random
 import awswrangler as wr
-from systems.util import send_mail
-from systems.Connector import WarehouseConn
 
-engine = WarehouseConn()
 environment = os.getenv('ENVIRONMENT')
 
 
-year = dt.now().year
-month = dt.now().strftime("%B")
-day = dt.now().day
+
 
 
 class OplogWorksError(Exception):
@@ -34,28 +29,29 @@ class Loader:
     #         self.resource = 'blobstorage'
     #         self.warehouse = 'synapse'
 
-
-
-    def s3_upload(self, tableName, data, year=year, month=month, day=day):
-        """
-        Put parquet objects into s3 bucket, organising them by table name and production date.
+    @staticmethod
+    def s3_upload(data, bucket_name:str, prefix:str, table_name, file_format='parquet'):
         
-        data: df - dataframe to be written
         """
-        if environment != 'highway':
-            loc = f's3://mi-etl/oplog_works_stage/{tableName}/{year}/{month}/{day}/{tableName}_{dt.now().time()}.parquet'
-        else:
-            loc = f's3://mi-etl/oplog_works/{tableName}/{year}/{month}/{day}/{tableName}_{dt.now().time()}.parquet'
+        prefix: if prefix more than one, include a "/"
+        """
+        year = dt.now().year
+        month = dt.now().strftime("%B")
+        day = dt.now().day
+        location = f"s3://{bucket_name}/{prefix}/{year}/{month}/{day}/{table_name}_{dt.now().time()}"
+
+        # Unsure about the forloop, Need Pascal's Input.
         try:
-            wr.s3.to_parquet(df=data, path=loc)
-            print("Wrote to S3 successfully!")
+            wr.s3.to_parquet(data, path=location)
         except Exception as e:
             print(f"Error writing to S3: => {e}")
-            # capture_exception(e)
 
+    # def redshift_upload():
 
+    # def snowflake():
 
-    def insert_update_record(self, engine, df, targetTable, pk):
+    @staticmethod
+    def insert_update_record(engine, df, targetTable, pk='_id'):
         """
         Update redhsift table via transaction.
 
@@ -118,11 +114,11 @@ class Loader:
             return True, "Transaction successful!"
         except Exception as e:
             msg = f"Problem writing to RedshiftConn: => {e}"
-            print(msg)
-            if environment == 'highway':
-                send_mail(msg, subject='Error')
-            else:
-                pass
+            # print(msg)
+            # if environment == 'highway':
+            #     send_mail(msg, subject='Error')
+            # else:
+            #     pass
             #Drop the temp table. Since the transaction failed
             with engine.begin() as conne:
                 conne.execute(drop)
@@ -130,7 +126,7 @@ class Loader:
             return False, str(e)
         
         
-    def warehouse_cdc_write(self, tableName, table):
+    # def warehouse_cdc_write(self, tableName, table):
         """
         Write a CDC copy to a datastore/datalake and onboard data into warehouse
 
