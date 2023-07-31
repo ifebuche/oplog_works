@@ -1,12 +1,12 @@
 from bson import Timestamp
 import os
 import time
+import datetime
+from pymongo import DESCENDING
 from numpy import insert
 import pandas as pd
 import math
-from systems.Connector import MongoConn
-import pymongo, smtplib
-import pandas as pd
+import smtplib
 from datetime import datetime as dt
 from email.mime.text import MIMEText
 from email.utils import formatdate
@@ -18,9 +18,6 @@ from email.mime.text import MIMEText
 environment = os.getenv('ENVIRONMENT')
 
 
-mongo_client = MongoConn()
-mongo_conn = mongo_client.kbanalytics
-run_time = mongo_conn.batch_pipe_run_times
 
 """
 -> You'll find two function bearing the same name, with one being commented out. 
@@ -32,39 +29,57 @@ run_time = mongo_conn.batch_pipe_run_times
         The other functions write to mongo
 """
 
-def get_last_run():
-     """
-     Get the time of last run from mongo
-     """
-     last_run = run_time.find().sort('date', pymongo.DESCENDING).limit(1) 
-     ttime = pd.DataFrame(last_run).time[0]
-     return ttime
 
-def append_last_run(current_date,current_time, changed_tables, load_time,processing_time, len_table,extract_time, env=True):
+def update_loader_status(mongo_conn):
 
+    db = mongo_conn['metadata']
+    collection = db['metadata']
+    collection.find_one_and_update(filter= {},sort=[('_id', DESCENDING)],update={"$set":{"loader": True}},upsert=True)
+
+
+def get_timestamp(mongo_conn):
     """
-    *inserts a new record in batch_pipe_run_time mongo collection*
-    changed_tables: str
-        contains names of collection/table that had changes in a particular period of time
-    len_tables: int
-        contains the number of collection/table that had changes in a particular period of time
-    extract_time: float
-        time taken to extract data in all collections that had changes
-    env: bool
-        either in production(Flase) state or dev state 
+    This method retrieves the most recent timestamp from the 'metadata' database in MongoDB.
+    If the 'metadata' database does not exist, the method creates it and inserts a document
+    with the current timestamp.
+
+    Returns:
+        last_run (bson.timestamp.Timestamp): The most recent timestamp from the 'metadata' 
+                                            database, or the current timestamp if the 
+                                            'metadata' database was just created.
     """
+    
+    db = mongo_conn["metadata"]
+    collection = db["metadata"]
+    # Try to retrieve the last document
+    last_document = collection.find_one(filter={'loader': True},sort=[('_id', DESCENDING)])
 
-    body = {
-        "date": current_date, "time": current_time,
-        # "date": insert_datetime, "time": insert_time,
-        "environment": env, "extract_time": extract_time,
-        "process_time": processing_time,
-        "load_time": load_time,
-        "table_length": len_table, "tables": changed_tables
-        }
+    # If the collection is empty or there are no documents, insert the dictionary
+    if not last_document:
+        #Create new document 
+        last_run = Timestamp(time=math.ceil(time.time()), inc=0)
+        last_document = {
+            "timestamp": last_run, 
+            "date": datetime.datetime.now(),
+            "loader": False
+                }
 
-    insert_result = run_time.insert_one(body)
+        collection.insert_one(last_document)
 
+    return last_document['timestamp']
+
+    
+def append_timestamp(mongo_conn):
+    db = mongo_conn["metadata"]
+    collection = db["metadata"]
+    current_time = Timestamp(time=math.ceil(time.time()), inc=0)
+    new_document = {
+            "timestamp": current_time, 
+            "date": datetime.datetime.now(),
+            "loader": False
+                }
+
+    collection.insert_one(new_document)
 
 if environment != 'highway':
     def get_last_run():

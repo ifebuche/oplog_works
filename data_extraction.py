@@ -1,9 +1,8 @@
 import datetime
 import pymongo
-from bson import Timestamp, ObjectId
-import math
-import time
+from bson import ObjectId
 import pandas as pd
+from .systems.util import get_timestamp, append_timestamp
 
 
 class DataExtraction:
@@ -15,39 +14,6 @@ class DataExtraction:
         self.extract_all = extract_all
         self.oplog_con = self.connection.local.oplog.rs
         self.database = self.connection[self.db]
-
-
-    def get_timestamp(self):
-        """
-        This method retrieves the most recent timestamp from the 'metadata' database in MongoDB.
-        If the 'metadata' database does not exist, the method creates it and inserts a document
-        with the current timestamp.
-
-        Returns:
-            last_run (bson.timestamp.Timestamp): The most recent timestamp from the 'metadata' 
-                                                database, or the current timestamp if the 
-                                                'metadata' database was just created.
-        """
-        
-        collection = self.database["metadata"]
-        
-        # Try to retrieve the last document
-        last_document = collection.find_one(sort=[('_id', pymongo.DESCENDING)])
-
-        # If the collection is empty or there are no documents, insert the dictionary
-        if not last_document:
-            #Create new document 
-            last_run = Timestamp(time=math.ceil(time.time()), inc=0)
-            last_document = {
-                "timestamp": last_run, 
-                "date": datetime.datetime.now()
-                    }
-
-            collection.insert_one(last_document)
-
-        return last_document['timestamp']
-
-        
 
     def handle_update_operation(self, doc, data_dict):
         collection_name = doc['ns'].split('.')[-1]
@@ -98,7 +64,11 @@ class DataExtraction:
 
     
     def extract_oplog_data(self):
-        last_time = self.get_timestamp()
+
+        append_timestamp(self.connection)
+        
+        last_time = get_timestamp(self.connection)
+
         data_dict_insert = {}
         data_dict_update = {}
 
@@ -138,10 +108,9 @@ class DataExtraction:
         # Alert.email()
         collection_df = {}
         for k, v in enitre_doc.items():
-            collection_df[k] = pd.json_normalize(v)
+            collection_df[k] = pd.json_normalize(v,max_level=0)
             for col in collection_df[k].columns:
                 if type(collection_df[k][col].iloc[0]) == ObjectId:
                     collection_df[k][col] = [str(line) for line in collection_df[k][col]]
-        
 
         return collection_df
