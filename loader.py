@@ -30,6 +30,7 @@ class Loader:
     #         self.resource = 'blobstorage'
     #         self.warehouse = 'synapse'
 
+
     def __init__(self,mongo_conn):
         self.mongo_conn = mongo_conn
 
@@ -128,6 +129,3 @@ class Loader:
                 conne.execute(drop)
             # capture_exception(e)
             return False, str(e)
-        
-        
-    

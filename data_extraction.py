@@ -64,9 +64,11 @@ class DataExtraction:
 
     
     def extract_oplog_data(self):
+
         append_timestamp(self.connection)
         
         last_time = get_timestamp(self.connection)
+
         data_dict_insert = {}
         data_dict_update = {}
 
