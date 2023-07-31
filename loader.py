@@ -2,16 +2,12 @@ from datetime import datetime as dt
 import os
 import random
 import awswrangler as wr
-from systems.util import send_mail
-from systems.Connector import WarehouseConn
+from .systems.util import update_loader_status
 
-engine = WarehouseConn()
 environment = os.getenv('ENVIRONMENT')
 
 
-year = dt.now().year
-month = dt.now().strftime("%B")
-day = dt.now().day
+
 
 
 class OplogWorksError(Exception):
@@ -34,28 +30,32 @@ class Loader:
     #         self.resource = 'blobstorage'
     #         self.warehouse = 'synapse'
 
+    def __init__(self,mongo_conn):
+        self.mongo_conn = mongo_conn
 
-
-    def s3_upload(self, tableName, data, year=year, month=month, day=day):
-        """
-        Put parquet objects into s3 bucket, organising them by table name and production date.
+    @staticmethod
+    def s3_upload(data, bucket_name:str, prefix:str, table_name, file_format='parquet'):
         
-        data: df - dataframe to be written
         """
-        if environment != 'highway':
-            loc = f's3://mi-etl/oplog_works_stage/{tableName}/{year}/{month}/{day}/{tableName}_{dt.now().time()}.parquet'
-        else:
-            loc = f's3://mi-etl/oplog_works/{tableName}/{year}/{month}/{day}/{tableName}_{dt.now().time()}.parquet'
+        prefix: if prefix more than one, include a "/"
+        """
+        year = dt.now().year
+        month = dt.now().strftime("%B")
+        day = dt.now().day
+        location = f"s3://{bucket_name}/{prefix}/{year}/{month}/{day}/{table_name}_{dt.now().time()}"
+
+        # Unsure about the forloop, Need Pascal's Input.
         try:
-            wr.s3.to_parquet(df=data, path=loc)
-            print("Wrote to S3 successfully!")
+            wr.s3.to_parquet(data, path=location)
         except Exception as e:
             print(f"Error writing to S3: => {e}")
-            # capture_exception(e)
 
+    # def redshift_upload():
 
+    # def snowflake():
 
-    def insert_update_record(self, engine, df, targetTable, pk):
+    @staticmethod
+    def insert_update_record(engine, df, targetTable, mongo_conn, pk='_id'):
         """
         Update redhsift table via transaction.
 
@@ -114,15 +114,15 @@ class Loader:
                 if transact_res:
                     print("Transaction Successful")
                     transact_response += transact_res.rowcount
-
+            update_loader_status(mongo_conn)
             return True, "Transaction successful!"
         except Exception as e:
             msg = f"Problem writing to RedshiftConn: => {e}"
-            print(msg)
-            if environment == 'highway':
-                send_mail(msg, subject='Error')
-            else:
-                pass
+            # print(msg)
+            # if environment == 'highway':
+            #     send_mail(msg, subject='Error')
+            # else:
+            #     pass
             #Drop the temp table. Since the transaction failed
             with engine.begin() as conne:
                 conne.execute(drop)
@@ -130,30 +130,4 @@ class Loader:
             return False, str(e)
         
         
-    def warehouse_cdc_write(self, tableName, table):
-        """
-        Write a CDC copy to a datastore/datalake and onboard data into warehouse
-
-        - Try dumping on S3, write status to errors dict
-        - Try writing to RedshiftConn, write status in result
-        """
-        
-        #Write to s3
-        try:
-            #Add current date as column
-            table_2_s3 = table.copy()
-            table_2_s3['write_date'] =  dt.now()
-            self.s3_upload(tableName, table_2_s3)
-        except Exception as e:
-            print(f"Error dumping to S3: => {e}")
-            # capture_exception(e)
-        
-        #write to RedshiftConn
-        try:
-            redshift_conn_inserted, msg = self.insert_update_record(engine, table, f"{tableName}", '_id')
-            if redshift_conn_inserted:
-                print("RS insert successful")
-        except Exception as e:
-            # capture_exception(e)
-            msg = f"Error writing to RedshiftConn => {e}"
-            print(msg)
+    
