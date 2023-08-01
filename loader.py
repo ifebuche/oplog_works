@@ -54,9 +54,13 @@ class Loader:
     # def redshift_upload():
 
     # def snowflake():
+    @staticmethod
+    def update_loader_run(mongo_conn):
+
+        update_loader_status(mongo_conn)
 
     @staticmethod
-    def insert_update_record(engine, df, targetTable, mongo_conn, pk='_id'):
+    def insert_update_record(engine, df, targetTable, pk='_id'):
         """
         Update redhsift table via transaction.
 
@@ -115,7 +119,7 @@ class Loader:
                 if transact_res:
                     print("Transaction Successful")
                     transact_response += transact_res.rowcount
-            update_loader_status(mongo_conn)
+            
             return True, "Transaction successful!"
         except Exception as e:
             msg = f"Problem writing to RedshiftConn: => {e}"
