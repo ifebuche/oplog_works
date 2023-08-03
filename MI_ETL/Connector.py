@@ -9,6 +9,14 @@ class Source:
 
     
     def mongo(mongo_url):
+        """ connects to mongo using uri
+
+        Args:
+            mongo_url (str): mongo connection string
+
+        Returns:
+            client: connection object
+        """
         print("Connecting to MongoDB...")
         client = pymongo.MongoClient(mongo_url, tlsCAFile=certifi.where())
         #Include try and exept

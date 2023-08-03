@@ -56,7 +56,11 @@ class Loader:
     # def snowflake():
     @staticmethod
     def update_loader_run(mongo_conn):
+        """update loader key in the metadata collection
 
+        Args:
+            mongo_conn (str): mongo connection string
+        """
         update_loader_status(mongo_conn)
 
     @staticmethod

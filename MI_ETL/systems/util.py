@@ -70,6 +70,8 @@ def get_timestamp(mongo_conn):
 
     
 def append_timestamp(mongo_conn):
+    """Append a new document with run time and status to the 'metadata' collection. 
+    """
     db = mongo_conn["metadata"]
     collection = db["metadata"]
     current_time = Timestamp(time=math.ceil(time.time()), inc=0)
@@ -80,78 +82,3 @@ def append_timestamp(mongo_conn):
                 }
 
     collection.insert_one(new_document)
-
-if environment != 'highway':
-    def get_last_run():
-        """
-        Get las run from local machine
-        """
-        if os.path.exists('date.csv'):
-            date  = pd.read_csv('date.csv')
-            date = date['date'].to_list()
-            last_run = date[-1]
-            return last_run
-        else:
-            date_df = pd.DataFrame([time.time()], columns= ['date'])
-            date = date_df['date'].to_list()
-            last_run = date[-1]
-            date_df.to_csv('date.csv', index=False)
-            return last_run
-
-    def append_last_run():
-        """
-        *inserts a new record in local machine date.csv*
-        """
-        date = pd.read_csv('date.csv')
-        new_date = pd.DataFrame({'date': time.time()}, index=[0])
-        #print('In the append last run function', date)
-        date = pd.concat([date, new_date], ignore_index=True)
-        date.to_csv('date.csv', index=False)
-
-
-def timestamp_to_bson_ts():
-    """
-    Function to convert timestamp to bson timestamp format which oplog uses
-    """
-    last_run = get_last_run()
-    print('Last run was ', last_run)
-    time_stamp = math.ceil(last_run)
-    ts = Timestamp(time=time_stamp, inc= 0)
-    return ts
-
-#Mailer
-def send_mail(message, subject='Success'):
-    """
-    Function to send out status mail to recipients
-    """
-    emailAdds = ['paschal.a@kobo360.com', 'ogbeide@kobo360.com']
-    names = ['Paschal', 'Nelson']
-    fromaddress = "paschal.a@kobo360.com"
-    pass_w = os.environ['PASSWORD']
-
-    for item, name in zip(emailAdds, names):
-        fromaddr = fromaddress
-        toaddr = item
-        replyto = "paschal.a@kobo360.com"
-
-        msg = MIMEMultipart()
-        msg['From'] = "Data Engineering"
-        msg['To'] = toaddr
-        msg['In-Reply-To'] = replyto
-
-        msg['Subject'] = f"Oplog Pipeline Cron: {subject}"
-        if subject != 'Success':
-            msg['Subject'] = f"Oplog Pipeline Cron: 'Failure'"
-        
-        body = message
-        
-        msg.attach(MIMEText(body, 'plain'))
-
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(fromaddr, pass_w)
-        text = msg.as_string()
-        server.sendmail(fromaddress, toaddr, text)
-        server.quit()
-        print("Email sent to" + " " + name + " " + item)
-

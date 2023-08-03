@@ -6,6 +6,8 @@ from .systems.util import get_timestamp, append_timestamp
 
 
 class DataExtraction:
+    """Extract recently inserted or modified data from source with duplicates removed
+    """
 
     def __init__(self, connection, db, extract_all:list=[]) -> None:
         #Fix  timestamp to know where timestamp will be pulled from
@@ -16,13 +18,25 @@ class DataExtraction:
         self.database = self.connection[self.db]
 
     def handle_update_operation(self, doc, data_dict):
+        """Extract Updated document from the cursor
+
+        Args:
+            doc (json): mongodb single document
+            data_dict (dict): an empty dict to hold updated
+        """
         collection_name = doc['ns'].split('.')[-1]
         if collection_name in data_dict.keys():
             data_dict[collection_name].append(doc['o2']['_id'])
         else:
             data_dict[collection_name] = [doc['o2']['_id']]
 
-    def handle_insert_operation(self, doc, data_dict):  
+    def handle_insert_operation(self, doc, data_dict): 
+        """Extract inserted document from the cursor
+
+        Args:
+            doc (json): mongodb single document
+            data_dict (dict): an empty dict to hold updated
+        """ 
         df_dict = doc.get('o')
         collection_name = doc['ns'].split('.')[-1]
         if collection_name in data_dict.keys():
@@ -33,9 +47,26 @@ class DataExtraction:
     #Delete operation can easily be added 
 
     def fix_duplicate_ids(self, data_dict_update):
+        """Removes the duplicate records in updates
+
+        Desc:
+            records with multiple updates will be trimmed to include last updated
+
+        Args:
+            data_dict_update (json): mongodb single document
+        """ 
         return {key: list(set(value)) for key, value in data_dict_update.items()}
     
     def remove_duplicate_docs(self, data_dict_insert, data_dict_update):
+        """Remove id from insert present in update
+
+        Args:
+            data_dict_insert (dict): holds the recently inserted document
+            data_dict_update (dict): holds the recently updated document
+
+        Returns:
+            data_dict_insert (dict): modified recently inserted document
+        """
         for k, v in data_dict_update.items():
             final_inserts_list = []
             insert = data_dict_insert.get(k)
@@ -50,6 +81,15 @@ class DataExtraction:
 
     
     def extract_entire_doc_from_update(self, data_dict_update, data_dict_insert):
+        """combines insert and update into single dictionary
+
+        Args:
+            data_dict_insert (dict): holds the modified recently inserted document
+            data_dict_update (dict): holds the recently updated document
+
+        Returns:
+            data_dict_insert (dict): combined dictionary
+        """
         for key, value in data_dict_update.items():
             collection_name = key
             df = self.database[collection_name].find({'_id': {"$in" : value}})
@@ -64,6 +104,16 @@ class DataExtraction:
 
     
     def extract_oplog_data(self):
+        """Tail Oplog for recently inserted/modified data.
+
+        This function monitors the MongoDB Oplog (operations log) to capture recently inserted or modified data in the 
+        database collections. The function returns a dictionary containing the collection name as the key and the new data 
+        as the value in the form of a DataFrame.
+
+        Returns:
+            collection_df (dict): A dictionary with the collection name as the key and the new data as the value in the 
+            form of a DataFrame.
+        """
 
         append_timestamp(self.connection)
         
