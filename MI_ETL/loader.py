@@ -129,59 +129,37 @@ class Loader:
                 conne.execute(drop)
             # capture_exception(e)
             return False, str(e)
-    def load_datalake(self):
-        pass
+        
 
-    def load_warehouse(self):
-        pass
-
-    def run(self, datalake=None, warehouse=None, *kwargs):
-        #docs should clear on what kwargs want to achieve
-        if datalake and not warehouse:
-            self.load_datalake()
-            #write metadata
-        elif datalake and warehouse:
-            self.load_datalake()
-            self.load_warehouse()
-            #write metadata
-        elif not datalake and warehouse:
-            self.load_warehouse()
-            #write metadata
-
-        #validate that all the credentials were supplied for s3 
-        #prefix should be optional
-        #add custom errors
-        #move outside s3 to init
-        #alert and lodinh should both alert
-        #function for result metadata 
+    def load_datalake(self, *kwargs):
         if 'bucket_name' not in kwargs.keys():
                 raise OplogWorksError("s3_upload","'bucket name' missing")
 
-            s3_params = {
+        s3_params = {
                            'bucket_name': kwargs['bucket_name'] 
                         }
-            if 'prefix' in kwargs.keys():
-                s3_params['prefix'] = kwargs['prefix']
-            failed_tables = []
-            successful_tables = []
-            counter = 0
-            for k, v in self.data.items():
-                #why we are ignoring cmd and metadata (remove unwanted collection/tables)
-                if k not in ['$cmd', 'metadata']:
-                    s3_params['data'] = v
-                    s3_params['table_name'] = k
-                    
-                    ok, message = self.s3_upload(s3_params)
-                    
-                    if not ok:
-                        print(f"table '{k}' failed - {message}")
-                        failed_tables.append(k)
-                    else:
-                        successful_tables.append(k)
-                        print(f"table '{k}' succesful - {message}")
+        if 'prefix' in kwargs.keys():
+            s3_params['prefix'] = kwargs['prefix']
+        failed_tables = []
+        successful_tables = []
+        counter = 0
+        for k, v in self.data.items():
+            #why we are ignoring cmd and metadata (remove unwanted collection/tables)
+            if k not in ['$cmd', 'metadata']:
+                s3_params['data'] = v
+                s3_params['table_name'] = k
+                
+                ok, message = self.s3_upload(s3_params)
+                
+                if not ok:
+                    print(f"table '{k}' failed - {message}")
+                    failed_tables.append(k)
+                else:
+                    successful_tables.append(k)
+                    print(f"table '{k}' succesful - {message}")
 
-                    counter +=1
-                    #     raise OplogWorksError("s3_upload",f"File not written to s3, {data}")
+                counter +=1
+                #     raise OplogWorksError("s3_upload",f"File not written to s3, {data}")
 
             outcome = {
                 'successful_tables' : successful_tables,
@@ -190,47 +168,73 @@ class Loader:
                 'description': 'S3 load job result'
             }
 
-        elif destination.lower() == 'redshift':
-            #validate redshift
-            required_params = ['user','password','host','db','port']
-            for item in required_params:
-                #ensure the required keys is passed and it is not an empty string
-                if item not in kwargs.keys() and kwargs.get(item):
-                    raise OplogWorksError("redshift_upload",f"'{item}' cannot be empty")
-            
-            redshift_params = {
-                    'user': kwargs['user'],
-                    'password': kwargs['password'],
-                    'host': kwargs['host'],
-                    'port': kwargs['port'],
-                    'db': kwargs['db']
-            }
-            engine = Destination.redshift(redshift_params)
-            failed_tables = []
-            successful_tables = []
-            counter = 0
-            #  = create_engine(f'postgresql://root:root@172.18.0.2:5432/postgres') #initialize enine
-            for collection in self.data.keys():
-                if collection != 'metadata':
-                    ok , message = self.insert_update_record(engine=engine, df = self.data[collection], targetTable=collection, pk='_id')
-                    # Loader.insert_update_record
-                    if not ok:
-                        print(f"table '{k}' failed - {message}")
-                        failed_tables.append(k)
-                    else:
-                        successful_tables.append(k)
-                        print(f"table '{k}' succesful - {message}")
-
-                    counter +=1
-
-            outcome = {
-                        'successful_tables' : successful_tables,
-                        'failed_tables': failed_tables,
-                        'message': f'{len(successful_tables)}/{counter} tables done.',
-                        'description': 'Redshift load job result'
-                        }
-
-            Loader.update_loader_run(mongo_conn=conn)
         return outcome
+
+    def load_warehouse(self, *kwargs):
+        required_params = ['user','password','host','db','port']
+        for item in required_params:
+            #ensure the required keys is passed and it is not an empty string
+            if item not in kwargs.keys() and kwargs.get(item):
+                raise OplogWorksError("redshift_upload",f"'{item}' cannot be empty")
+        
+        redshift_params = {
+                'user': kwargs['user'],
+                'password': kwargs['password'],
+                'host': kwargs['host'],
+                'port': kwargs['port'],
+                'db': kwargs['db']
+        }
+        engine = Destination.redshift(redshift_params)
+        failed_tables = []
+        successful_tables = []
+        counter = 0
+        #  = create_engine(f'postgresql://root:root@172.18.0.2:5432/postgres') #initialize enine
+        for collection in self.data.keys():
+            if collection != 'metadata':
+                ok , message = self.insert_update_record(engine=engine, df = self.data[collection], targetTable=collection, pk='_id')
+                # Loader.insert_update_record
+                if not ok:
+                    print(f"table '{collection}' failed - {message}")
+                    failed_tables.append(collection)
+                else:
+                    successful_tables.append(collection)
+                    print(f"table '{collection}' succesful - {message}")
+
+                counter +=1
+
+        outcome = {
+                    'successful_tables' : successful_tables,
+                    'failed_tables': failed_tables,
+                    'message': f'{len(successful_tables)}/{counter} tables done.',
+                    'description': 'Redshift load job result'
+                    }
+
+        Loader.update_loader_run(mongo_conn=self.mongo_conn)
+        return outcome
+
+
+    def run(self, datalake=None, warehouse=None, *kwargs):
+        #docs should clear on what kwargs want to achieve
+        if datalake and not warehouse:
+            
+            return self.load_datalake()
+            
+            #write metadata
+        elif datalake and warehouse:
+            outcome1 = self.load_datalake()
+            outcome2 = self.load_warehouse()
+
+            return outcome1, outcome2
+            #write metadata
+        elif not datalake and warehouse:
+            return self.load_warehouse()
+            #write metadata
+
+        #validate that all the credentials were supplied for s3 
+        #prefix should be optional
+        #add custom errors
+        #move outside s3 to init
+        #alert and lodinh should both alert
+        #function for result metadata
 
     
