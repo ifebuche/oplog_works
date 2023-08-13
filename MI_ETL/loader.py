@@ -5,10 +5,10 @@ import awswrangler as wr
 from .systems.util import update_loader_status
 from .Connector import Destination
 import pandas as pd
+from sqlalchemy import text
+
 
 environment = os.getenv('ENVIRONMENT')
-
-
 
 
 
@@ -26,7 +26,8 @@ class Loader:
     def __init__(self,mongo_conn,data):
         self.mongo_conn = mongo_conn
         self.data = data
-        #initialize a class Loader, 
+        #initialize a class Loader,
+        
     @staticmethod
     def s3_upload(s3_params):# data, bucket_name:str, table_name, prefix:str = None):
         """Upload dataframe to s3
@@ -103,7 +104,7 @@ class Loader:
             create_response, transact_response = 0, 0
             
             with engine.begin() as conne:
-                create_res = conne.execute(create)
+                create_res = conne.execute(text(create))
                 create_response += create_res.rowcount
                 if not create_response:
                     msg = (f"Failure creating {temp} table")
@@ -115,13 +116,13 @@ class Loader:
                 df.to_sql(temp, engine, index=False, if_exists='append')
             except Exception as e:
                 with engine.begin() as conne:
-                    conne.execute(drop)
+                    conne.execute(text(drop))
                     raise OplogWorksError("insert_update_record()", f"\nError message => {str(e)}")
                     # # capture_exception()
                     # return False, f"We could not load the temp table.\nErro: => {e}"
 
             with engine.begin() as conne:
-                transact_res = conne.execute(transact)
+                transact_res = conne.execute(text(transact))
                 if transact_res:
                     print("Transaction Successful")
                     transact_response += transact_res.rowcount
@@ -136,7 +137,7 @@ class Loader:
             #     pass
             #Drop the temp table. Since the transaction failed
             with engine.begin() as conne:
-                conne.execute(drop)
+                conne.execute(text(drop))
             # capture_exception(e)
             return False, str(e)
         
@@ -158,7 +159,7 @@ class Loader:
             if k not in ['$cmd', 'metadata']:
                 s3_params['data'] = v
                 s3_params['table_name'] = k
-                print(s3_params)
+                # print(s3_params)
                 ok, message = self.s3_upload(s3_params)
                 
                 if not ok:
@@ -219,7 +220,7 @@ class Loader:
                     'description': 'Redshift load job result'
                     }
 
-        Loader.update_loader_run(mongo_conn=self.mongo_conn)
+        update_loader_status(mongo_conn=self.mongo_conn)
         return outcome
 
     def run(self, datalake=None, warehouse=None, **kwargs):
@@ -230,8 +231,8 @@ class Loader:
             
             #write metadata
         elif datalake and warehouse:
-            outcome1 = self.load_datalake()
-            outcome2 = self.load_warehouse()
+            outcome1 = self.load_datalake(**kwargs)
+            outcome2 = self.load_warehouse(**kwargs)
 
             return outcome1, outcome2
             #write metadata
