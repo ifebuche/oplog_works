@@ -2,8 +2,9 @@ from datetime import datetime as dt
 import os
 import random
 import awswrangler as wr
-from .util import update_loader_status
-from connector import Destination
+from .systems.util import update_loader_status
+from .Connector import Destination
+import pandas as pd
 
 environment = os.getenv('ENVIRONMENT')
 
@@ -27,7 +28,7 @@ class Loader:
         self.data = data
         #initialize a class Loader, 
     @staticmethod
-    def s3_upload(data, bucket_name:str, table_name, prefix:str = None):
+    def s3_upload(s3_params):# data, bucket_name:str, table_name, prefix:str = None):
         """Upload dataframe to s3
 
         Args:
@@ -37,6 +38,14 @@ class Loader:
             table_name (str): name of the table used as part of the filename
             file_format (str, optional): filetye. Defaults to 'parquet'.
         """
+        data = s3_params.get('data',pd.DataFrame())
+        bucket_name = s3_params.get('bucket_name',False)
+        if not bucket_name:
+            raise OplogWorksError('s3_upload','Supply Bucket Name')
+        table_name = s3_params.get('table_name',False)
+        if not table_name:
+            raise OplogWorksError('s3_upload','Supply Bucket Name')
+        prefix = s3_params.get('prefix',False)
         year = dt.now().year
         month = dt.now().strftime("%B")
         day = dt.now().day
@@ -56,7 +65,7 @@ class Loader:
         return True, 'Success'
 
     @staticmethod
-    def insert_update_record(engine, df, targetTable, mongo_conn, pk='_id'):
+    def insert_update_record(engine, df, targetTable, pk='_id'):
         """
         Update redhsift table via transaction.
 
@@ -92,6 +101,7 @@ class Loader:
         try:
             print(f"Creating temp table {temp}")
             create_response, transact_response = 0, 0
+            
             with engine.begin() as conne:
                 create_res = conne.execute(create)
                 create_response += create_res.rowcount
@@ -131,7 +141,7 @@ class Loader:
             return False, str(e)
         
 
-    def load_datalake(self, *kwargs):
+    def load_datalake(self, *args, **kwargs):
         if 'bucket_name' not in kwargs.keys():
                 raise OplogWorksError("s3_upload","'bucket name' missing")
 
@@ -148,7 +158,7 @@ class Loader:
             if k not in ['$cmd', 'metadata']:
                 s3_params['data'] = v
                 s3_params['table_name'] = k
-                
+                print(s3_params)
                 ok, message = self.s3_upload(s3_params)
                 
                 if not ok:
@@ -170,19 +180,19 @@ class Loader:
 
         return outcome
 
-    def load_warehouse(self, *kwargs):
+    def load_warehouse(self, **kwargs):
         required_params = ['user','password','host','db','port']
         for item in required_params:
             #ensure the required keys is passed and it is not an empty string
             if item not in kwargs.keys() and kwargs.get(item):
                 raise OplogWorksError("redshift_upload",f"'{item}' cannot be empty")
-        
+        print(kwargs)
         redshift_params = {
                 'user': kwargs['user'],
                 'password': kwargs['password'],
                 'host': kwargs['host'],
                 'port': kwargs['port'],
-                'db': kwargs['db']
+                'database': kwargs['db']
         }
         engine = Destination.redshift(redshift_params)
         failed_tables = []
@@ -212,12 +222,11 @@ class Loader:
         Loader.update_loader_run(mongo_conn=self.mongo_conn)
         return outcome
 
-
-    def run(self, datalake=None, warehouse=None, *kwargs):
+    def run(self, datalake=None, warehouse=None, **kwargs):
         #docs should clear on what kwargs want to achieve
         if datalake and not warehouse:
             
-            return self.load_datalake()
+            return self.load_datalake(**kwargs)
             
             #write metadata
         elif datalake and warehouse:
@@ -227,7 +236,7 @@ class Loader:
             return outcome1, outcome2
             #write metadata
         elif not datalake and warehouse:
-            return self.load_warehouse()
+            return self.load_warehouse(**kwargs)
             #write metadata
 
         #validate that all the credentials were supplied for s3 
