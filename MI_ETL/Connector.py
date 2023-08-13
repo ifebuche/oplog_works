@@ -3,6 +3,10 @@ import psycopg2
 import pymongo
 import certifi
 import snowflake.connector
+from sqlalchemy import create_engine
+import psycopg2
+
+
 
 
 class Source:
@@ -60,15 +64,26 @@ class Destination:
         return conn
 
     @staticmethod
+
     def redshift(redshift_details):
-        print(f"Connecting to Redshift")
-        conn = psycopg2.connect(
-            host=redshift_details['host'],
-            port=redshift_details['port'],
-            database=redshift_details['database'],
-            user=redshift_details['user'],
-            password=redshift_details['password']
-        )
+        print("connecting to redshift")
+        conn = create_engine(
+                    f'postgresql://{redshift_details["user"]}:{redshift_details["password"]}@'
+                    f'{redshift_details["host"]}:{redshift_details["port"]}/'
+                    f'{redshift_details["database"]}'
+                )
         return conn
+    
+    
+    # def redshift(redshift_details):
+    #     print(f"Connecting to Redshift")
+    #     conn = psycopg2.connect(
+    #         host=redshift_details['host'],
+    #         port=redshift_details['port'],
+    #         database=redshift_details['database'],
+    #         user=redshift_details['user'],
+    #         password=redshift_details['password']
+    #     )
+    #     return conn
         
         
