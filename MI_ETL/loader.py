@@ -225,21 +225,16 @@ class Loader:
 
     def run(self, datalake=None, warehouse=None, **kwargs):
         #docs should clear on what kwargs want to achieve
-        if datalake and not warehouse:
+        run_details = {}
+        if datalake:
+            run_details['datalake'] = self.load_datalake(**kwargs)
             
-            return self.load_datalake(**kwargs)
-            
+        if warehouse:
+            run_details['datawarehouse'] = self.load_warehouse(**kwargs)
             #write metadata
-        elif datalake and warehouse:
-            outcome1 = self.load_datalake(**kwargs)
-            outcome2 = self.load_warehouse(**kwargs)
-
-            return outcome1, outcome2
-            #write metadata
-        elif not datalake and warehouse:
-            return self.load_warehouse(**kwargs)
-            #write metadata
-
+        return run_details
+        
+        
         #validate that all the credentials were supplied for s3 
         #prefix should be optional
         #add custom errors
