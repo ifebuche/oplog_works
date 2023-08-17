@@ -3,6 +3,7 @@ import pymongo
 from bson import ObjectId
 import pandas as pd
 from .systems.util import get_timestamp, append_timestamp
+from collections import defaultdict
 
 
 class DataExtraction:
@@ -25,10 +26,8 @@ class DataExtraction:
             data_dict (dict): an empty dict to hold updated
         """
         collection_name = doc['ns'].split('.')[-1]
-        if collection_name in data_dict.keys():
-            data_dict[collection_name].append(doc['o2']['_id'])
-        else:
-            data_dict[collection_name] = [doc['o2']['_id']]
+        data_dict[collection_name].append(doc['o2']['_id'])
+
 
     def handle_insert_operation(self, doc, data_dict): 
         """Extract inserted document from the cursor
@@ -39,10 +38,7 @@ class DataExtraction:
         """ 
         df_dict = doc.get('o')
         collection_name = doc['ns'].split('.')[-1]
-        if collection_name in data_dict.keys():
-            data_dict[collection_name].append(df_dict)
-        else:
-            data_dict[collection_name] = [df_dict]
+        data_dict[collection_name].append(df_dict)
 
     #Delete operation can easily be added 
 
@@ -58,26 +54,21 @@ class DataExtraction:
         return {key: list(set(value)) for key, value in data_dict_update.items()}
     
     def remove_duplicate_docs(self, data_dict_insert, data_dict_update):
-        """Remove id from insert present in update
+        """Removes duplicate documents from inserts if they are present in updates
 
         Args:
-            data_dict_insert (dict): holds the recently inserted document
-            data_dict_update (dict): holds the recently updated document
+            data_dict_insert (dict): Dictionary holding inserted documents
+            data_dict_update (dict): Dictionary holding updated document IDs
 
         Returns:
-            data_dict_insert (dict): modified recently inserted document
-        """
-        for k, v in data_dict_update.items():
-            final_inserts_list = []
-            insert = data_dict_insert.get(k)
-            if insert:
-                for doc in insert:
-                    if not doc['_id'] in v:
-                        final_inserts_list.append(doc)
-                data_dict_insert[k] = final_inserts_list
-            
+            dict: Dictionary with duplicate documents removed
+        """ 
+        for key in data_dict_insert.keys():
+            if key in data_dict_update:
+                unique_ids = set(data_dict_update[key])
+                data_dict_insert[key] = [doc for doc in data_dict_insert[key] if doc['_id'] not in unique_ids]
         return data_dict_insert
-    
+        
 
     
     def extract_entire_doc_from_update(self, data_dict_update, data_dict_insert):
@@ -94,12 +85,7 @@ class DataExtraction:
             collection_name = key
             df = self.database[collection_name].find({'_id': {"$in" : value}})
             for d in df:
-                if collection_name in data_dict_insert.keys():
-                    data_dict_insert[collection_name].append(d)
-                                    
-                else:
-                    data_dict_insert[collection_name] = [d]
-
+                data_dict_insert[collection_name].append(d)
         return data_dict_insert
 
     
@@ -119,8 +105,8 @@ class DataExtraction:
         
         last_time = get_timestamp(self.connection)
 
-        data_dict_insert = {}
-        data_dict_update = {}
+        data_dict_insert = defaultdict(list)
+        data_dict_update = defaultdict(list)
 
         extract_start_time = datetime.datetime.now()
         if self.extract_all is None:
@@ -133,6 +119,9 @@ class DataExtraction:
                             'ns' :{'$regex' : extract_all}},
                             cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
                             oplog_replay=True)
+            
+        # Hmm one question. Since we noted the time for next run at the to of this function(line 105) . What then is the point of using
+        # cursor alive, can we use oplog without using tailable cursor, Casue the wait time might be delaying it? 
         while cursor.alive:
             for doc in cursor:
                 if doc['op'] == 'u':

@@ -130,12 +130,6 @@ class Loader:
             return True, "Transaction successful!"
         except Exception as e:
             msg = f"Problem writing to RedshiftConn: => {e}"
-            # print(msg)
-            # if environment == 'highway':
-            #     send_mail(msg, subject='Error')
-            # else:
-            #     pass
-            #Drop the temp table. Since the transaction failed
             with engine.begin() as conne:
                 conne.execute(text(drop))
             # capture_exception(e)
