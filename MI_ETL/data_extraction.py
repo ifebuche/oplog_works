@@ -27,6 +27,7 @@ class DataExtraction:
         """
         collection_name = doc['ns'].split('.')[-1]
         data_dict[collection_name].append(doc['o2']['_id'])
+        
 
 
     def handle_insert_operation(self, doc, data_dict): 
@@ -87,7 +88,6 @@ class DataExtraction:
             for d in df:
                 data_dict_insert[collection_name].append(d)
         return data_dict_insert
-
     
     def extract_oplog_data(self):
         """Tail Oplog for recently inserted/modified data.
