@@ -4,19 +4,32 @@ from bson import ObjectId
 import pandas as pd
 from .systems.util import get_timestamp, append_timestamp
 from collections import defaultdict
+from bson import Timestamp
+import re
 
 
 class DataExtraction:
     """Extract recently inserted or modified data from source with duplicates removed
     """
 
-    def __init__(self, connection, db, extract_all:list=[]) -> None:
+    def __init__(self, connection, db, backfill=None, run_per_day:str=1, extract_all:list=[]) -> None:
         #Fix  timestamp to know where timestamp will be pulled from
         self.db = db
         self.connection = connection
         self.extract_all = extract_all
         self.oplog_con = self.connection.local.oplog.rs
         self.database = self.connection[self.db]
+        # backfill accepts time
+        self.backfill = backfill
+
+        """Run per day shows how many time the pipeline runs each day.
+           This helsp to filter data on the next run. 
+           e.g If run per dayis 1 = 24hrs.
+           This means get everything from oplog where the timestamp is greater than previous timestamp ,
+           Then check each document and make sure the timestampt is less than timestamp + 24hrs. 
+        """
+        self.run_per_day = run_per_day
+        
 
     def handle_update_operation(self, doc, data_dict):
         """Extract Updated document from the cursor
@@ -27,7 +40,7 @@ class DataExtraction:
         """
         collection_name = doc['ns'].split('.')[-1]
         data_dict[collection_name].append(doc['o2']['_id'])
-        
+
 
 
     def handle_insert_operation(self, doc, data_dict): 
@@ -108,20 +121,35 @@ class DataExtraction:
         data_dict_insert = defaultdict(list)
         data_dict_update = defaultdict(list)
 
+
         extract_start_time = datetime.datetime.now()
+
+        if self.backfill is not None:
+            date_format = '%Y/%m/%d'  # Format of the input string
+            parsed_date = datetime.datetime.strptime(self.backfill, date_format)
+            filter_time = Timestamp(parsed_date, inc=0)
+            print(filter_time)
+
+        else:
+            filter_time = last_time
+            print(filter_time)
+
         if self.extract_all is None:
-            cursor = self.oplog_con.find({'ts': {'$gt': last_time}},
+            cursor = self.oplog_con.find({'ts': {'$gt': filter_time}},
                             cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
                             oplog_replay=True)
         else:
-            extract_all = '|'.join(('^'+n) for n in self.extract_all)
-            cursor = self.oplog_con.find({'ts': {'$gt': last_time},
+            # Optimize/ refactor
+            extract_all = [f'{self.db}.{i}' for i in self.extract_all]
+            extract_all = '|'.join(('^'+n) for n in extract_all)
+           
+            
+
+            cursor = self.oplog_con.find({'ts': {'$gt': filter_time},
                             'ns' :{'$regex' : extract_all}},
                             cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
                             oplog_replay=True)
-            
-        # Hmm one question. Since we noted the time for next run at the to of this function(line 105) . What then is the point of using
-        # cursor alive, can we use oplog without using tailable cursor, Casue the wait time might be delaying it? 
+
         while cursor.alive:
             for doc in cursor:
                 if doc['op'] == 'u':
@@ -133,14 +161,11 @@ class DataExtraction:
                 break
             break
         
+
         data_dict_update = self.fix_duplicate_ids(data_dict_update)
         data_dict_insert = self.remove_duplicate_docs(data_dict_insert, data_dict_update)
 
         enitre_doc = self.extract_entire_doc_from_update(data_dict_update, data_dict_insert)
-
-        #Recording metrics for extract metadata
-        # extract_end_time = datetime.now() - extract_start_time
-        # table_lenght = len(data_insert.keys())
         
 
         # # Need ideas on this alert logic : Do we make it mandatory for users to have an alert?
