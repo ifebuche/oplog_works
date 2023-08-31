@@ -1,11 +1,12 @@
 import datetime
-import pymongo
-from bson import ObjectId
-import pandas as pd
-from .systems.util import get_timestamp, append_timestamp
-from collections import defaultdict
-from bson import Timestamp
 import re
+from collections import defaultdict
+
+import pandas as pd
+import pymongo
+from bson import ObjectId, Timestamp
+
+from .systems.util import append_timestamp, get_timestamp
 
 
 class DataExtraction:

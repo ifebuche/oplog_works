@@ -1,19 +1,19 @@
-from bson import Timestamp
-import os
-import time
 import datetime
-from pymongo import DESCENDING
-from numpy import insert
-import pandas as pd
 import math
+import os
 import smtplib
+import time
 from datetime import datetime as dt
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate
-from email.mime.multipart import MIMEMultipart
-from email.mime.application import MIMEApplication
-from email.mime.text import MIMEText
 
+import pandas as pd
+from bson import Timestamp
+from numpy import insert
+from pymongo import DESCENDING
+from ..Error import OplogWorksError
 
 environment = os.getenv('ENVIRONMENT')
 
@@ -82,3 +82,10 @@ def append_timestamp(mongo_conn):
                 }
 
     collection.insert_one(new_document)
+
+
+def validate_kwargs(kwargs,required_params,func):
+    missing_params = [param for param in required_params if param not in kwargs]
+    
+    if missing_params:
+        raise OplogWorksError(func, f"{', '.join(missing_params)} are missing")

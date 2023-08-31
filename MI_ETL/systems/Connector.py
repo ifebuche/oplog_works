@@ -1,15 +1,15 @@
+import os
+
+import certifi
 from pymongo import MongoClient
 from sqlalchemy import create_engine
-import os
-import certifi
-
 
 #open_machine = "mongodb+srv://nelson:gI5xU2OzRDHJcrsh@cluster0.oogfs.mongodb.net/?retryWrites=true&w=majority"
 open_machine = "mongodb+srv://joe:R17meEbZWC3ZEcHe@cluster0.oogfs.mongodb.net/?retryWrites=true&w=majority"
 environment = os.getenv('ENVIRONMENTx', open_machine)
 
 if environment != 'highway':
-    from dotenv import load_dotenv, find_dotenv
+    from dotenv import find_dotenv, load_dotenv
     load_dotenv(find_dotenv())
 
 def MongoConn():
