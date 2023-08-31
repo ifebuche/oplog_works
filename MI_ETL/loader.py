@@ -1,23 +1,17 @@
-from datetime import datetime as dt
 import os
 import random
+from datetime import datetime as dt
+
 import awswrangler as wr
-from .systems.util import update_loader_status
-from .Connector import Destination
 import pandas as pd
 from sqlalchemy import text
 
+from .Connector import Destination
+from .systems.util import update_loader_status, validate_kwargs
+from .Error import OplogWorksError
 
 environment = os.getenv('ENVIRONMENT')
 
-
-
-class OplogWorksError(Exception):
-    def __init__(self, func_name, issue):
-        self.func_name = func_name
-        self.issue = issue
-    def __str__(self):
-        return f"Error at {self.func_name}: \nIssue => {self.issue}"
 
 class Loader:
     """
@@ -39,14 +33,13 @@ class Loader:
             table_name (str): name of the table used as part of the filename
             file_format (str, optional): filetye. Defaults to 'parquet'.
         """
+        validate_kwargs(s3_params,['bucket_name','table_name'],'s3_upload')
+        
         data = s3_params.get('data',pd.DataFrame())
         bucket_name = s3_params.get('bucket_name',False)
-        if not bucket_name:
-            raise OplogWorksError('s3_upload','Supply Bucket Name')
         table_name = s3_params.get('table_name',False)
-        if not table_name:
-            raise OplogWorksError('s3_upload','Supply Bucket Name')
         prefix = s3_params.get('prefix',False)
+        
         year = dt.now().year
         month = dt.now().strftime("%B")
         day = dt.now().day
@@ -130,12 +123,6 @@ class Loader:
             return True, "Transaction successful!"
         except Exception as e:
             msg = f"Problem writing to RedshiftConn: => {e}"
-            # print(msg)
-            # if environment == 'highway':
-            #     send_mail(msg, subject='Error')
-            # else:
-            #     pass
-            #Drop the temp table. Since the transaction failed
             with engine.begin() as conne:
                 conne.execute(text(drop))
             # capture_exception(e)
@@ -143,12 +130,11 @@ class Loader:
         
 
     def load_datalake(self, *args, **kwargs):
-        if 'bucket_name' not in kwargs.keys():
-                raise OplogWorksError("s3_upload","'bucket name' missing")
-
+        validate_kwargs(kwargs,['bucket_name'],'load_datalake')
+        
         s3_params = {
                            'bucket_name': kwargs['bucket_name'] 
-                        }
+                    }
         if 'prefix' in kwargs.keys():
             s3_params['prefix'] = kwargs['prefix']
         failed_tables = []
@@ -182,11 +168,8 @@ class Loader:
         return outcome
 
     def load_warehouse(self, **kwargs):
-        required_params = ['user','password','host','db','port']
-        for item in required_params:
-            #ensure the required keys is passed and it is not an empty string
-            if item not in kwargs.keys() and kwargs.get(item):
-                raise OplogWorksError("redshift_upload",f"'{item}' cannot be empty")
+        validate_kwargs(kwargs,['user','password','host','db','port'],'load_warehouse')
+        
         print(kwargs)
         redshift_params = {
                 'user': kwargs['user'],
@@ -225,21 +208,16 @@ class Loader:
 
     def run(self, datalake=None, warehouse=None, **kwargs):
         #docs should clear on what kwargs want to achieve
-        if datalake and not warehouse:
+        run_details = {}
+        if datalake:
+            run_details['datalake'] = self.load_datalake(**kwargs)
             
-            return self.load_datalake(**kwargs)
-            
+        if warehouse:
+            run_details['datawarehouse'] = self.load_warehouse(**kwargs)
             #write metadata
-        elif datalake and warehouse:
-            outcome1 = self.load_datalake(**kwargs)
-            outcome2 = self.load_warehouse(**kwargs)
-
-            return outcome1, outcome2
-            #write metadata
-        elif not datalake and warehouse:
-            return self.load_warehouse(**kwargs)
-            #write metadata
-
+        return run_details
+        
+        
         #validate that all the credentials were supplied for s3 
         #prefix should be optional
         #add custom errors

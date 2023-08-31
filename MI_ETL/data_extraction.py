@@ -1,21 +1,36 @@
 import datetime
-import pymongo
-from bson import ObjectId
+import re
+from collections import defaultdict
+
 import pandas as pd
-from .systems.util import get_timestamp, append_timestamp
+import pymongo
+from bson import ObjectId, Timestamp
+
+from .systems.util import append_timestamp, get_timestamp
 
 
 class DataExtraction:
     """Extract recently inserted or modified data from source with duplicates removed
     """
 
-    def __init__(self, connection, db, extract_all:list=[]) -> None:
+    def __init__(self, connection, db, backfill=None, run_per_day:str=1, extract_all:list=[]) -> None:
         #Fix  timestamp to know where timestamp will be pulled from
         self.db = db
         self.connection = connection
         self.extract_all = extract_all
         self.oplog_con = self.connection.local.oplog.rs
         self.database = self.connection[self.db]
+        # backfill accepts time
+        self.backfill = backfill
+
+        """Run per day shows how many time the pipeline runs each day.
+           This helsp to filter data on the next run. 
+           e.g If run per dayis 1 = 24hrs.
+           This means get everything from oplog where the timestamp is greater than previous timestamp ,
+           Then check each document and make sure the timestampt is less than timestamp + 24hrs. 
+        """
+        self.run_per_day = run_per_day
+        
 
     def handle_update_operation(self, doc, data_dict):
         """Extract Updated document from the cursor
@@ -25,10 +40,9 @@ class DataExtraction:
             data_dict (dict): an empty dict to hold updated
         """
         collection_name = doc['ns'].split('.')[-1]
-        if collection_name in data_dict.keys():
-            data_dict[collection_name].append(doc['o2']['_id'])
-        else:
-            data_dict[collection_name] = [doc['o2']['_id']]
+        data_dict[collection_name].append(doc['o2']['_id'])
+
+
 
     def handle_insert_operation(self, doc, data_dict): 
         """Extract inserted document from the cursor
@@ -39,10 +53,7 @@ class DataExtraction:
         """ 
         df_dict = doc.get('o')
         collection_name = doc['ns'].split('.')[-1]
-        if collection_name in data_dict.keys():
-            data_dict[collection_name].append(df_dict)
-        else:
-            data_dict[collection_name] = [df_dict]
+        data_dict[collection_name].append(df_dict)
 
     #Delete operation can easily be added 
 
@@ -58,26 +69,21 @@ class DataExtraction:
         return {key: list(set(value)) for key, value in data_dict_update.items()}
     
     def remove_duplicate_docs(self, data_dict_insert, data_dict_update):
-        """Remove id from insert present in update
+        """Removes duplicate documents from inserts if they are present in updates
 
         Args:
-            data_dict_insert (dict): holds the recently inserted document
-            data_dict_update (dict): holds the recently updated document
+            data_dict_insert (dict): Dictionary holding inserted documents
+            data_dict_update (dict): Dictionary holding updated document IDs
 
         Returns:
-            data_dict_insert (dict): modified recently inserted document
-        """
-        for k, v in data_dict_update.items():
-            final_inserts_list = []
-            insert = data_dict_insert.get(k)
-            if insert:
-                for doc in insert:
-                    if not doc['_id'] in v:
-                        final_inserts_list.append(doc)
-                data_dict_insert[k] = final_inserts_list
-            
+            dict: Dictionary with duplicate documents removed
+        """ 
+        for key in data_dict_insert.keys():
+            if key in data_dict_update:
+                unique_ids = set(data_dict_update[key])
+                data_dict_insert[key] = [doc for doc in data_dict_insert[key] if doc['_id'] not in unique_ids]
         return data_dict_insert
-    
+        
 
     
     def extract_entire_doc_from_update(self, data_dict_update, data_dict_insert):
@@ -94,14 +100,8 @@ class DataExtraction:
             collection_name = key
             df = self.database[collection_name].find({'_id': {"$in" : value}})
             for d in df:
-                if collection_name in data_dict_insert.keys():
-                    data_dict_insert[collection_name].append(d)
-                                    
-                else:
-                    data_dict_insert[collection_name] = [d]
-
+                data_dict_insert[collection_name].append(d)
         return data_dict_insert
-
     
     def extract_oplog_data(self):
         """Tail Oplog for recently inserted/modified data.
@@ -119,20 +119,38 @@ class DataExtraction:
         
         last_time = get_timestamp(self.connection)
 
-        data_dict_insert = {}
-        data_dict_update = {}
+        data_dict_insert = defaultdict(list)
+        data_dict_update = defaultdict(list)
+
 
         extract_start_time = datetime.datetime.now()
+
+        if self.backfill is not None:
+            date_format = '%Y/%m/%d'  # Format of the input string
+            parsed_date = datetime.datetime.strptime(self.backfill, date_format)
+            filter_time = Timestamp(parsed_date, inc=0)
+            print(filter_time)
+
+        else:
+            filter_time = last_time
+            print(filter_time)
+
         if self.extract_all is None:
-            cursor = self.oplog_con.find({'ts': {'$gt': last_time}},
+            cursor = self.oplog_con.find({'ts': {'$gt': filter_time}},
                             cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
                             oplog_replay=True)
         else:
-            extract_all = '|'.join(('^'+n) for n in self.extract_all)
-            cursor = self.oplog_con.find({'ts': {'$gt': last_time},
+            # Optimize/ refactor
+            extract_all = [f'{self.db}.{i}' for i in self.extract_all]
+            extract_all = '|'.join(('^'+n) for n in extract_all)
+           
+            
+
+            cursor = self.oplog_con.find({'ts': {'$gt': filter_time},
                             'ns' :{'$regex' : extract_all}},
                             cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
                             oplog_replay=True)
+
         while cursor.alive:
             for doc in cursor:
                 if doc['op'] == 'u':
@@ -144,14 +162,11 @@ class DataExtraction:
                 break
             break
         
+
         data_dict_update = self.fix_duplicate_ids(data_dict_update)
         data_dict_insert = self.remove_duplicate_docs(data_dict_insert, data_dict_update)
 
         enitre_doc = self.extract_entire_doc_from_update(data_dict_update, data_dict_insert)
-
-        #Recording metrics for extract metadata
-        # extract_end_time = datetime.now() - extract_start_time
-        # table_lenght = len(data_insert.keys())
         
 
         # # Need ideas on this alert logic : Do we make it mandatory for users to have an alert?

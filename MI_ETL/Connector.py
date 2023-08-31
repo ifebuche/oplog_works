@@ -1,17 +1,14 @@
 import boto3
+import certifi
 import psycopg2
 import pymongo
-import certifi
 import snowflake.connector
 from sqlalchemy import create_engine
-import psycopg2
-
-
 
 
 class Source:
 
-    
+    @staticmethod
     def mongo(mongo_url):
         """ connects to mongo using uri
 
@@ -22,9 +19,14 @@ class Source:
             client: connection object
         """
         print("Connecting to MongoDB...")
-        client = pymongo.MongoClient(mongo_url, tlsCAFile=certifi.where())
-        #Include try and exept
-        print("Connected")
+        try:
+            client = pymongo.MongoClient(mongo_url, tlsCAFile=certifi.where())
+            #force a connection to test if the uri is valid
+            client.server_info()
+            print("Connected")
+        except pymongo.errors.ServerSelectionTimeoutError as e:
+            raise ConnectionError(f"Failed to connect to MongoDB: {e}")
+            
         return client
 
     
