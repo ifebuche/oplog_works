@@ -4,7 +4,7 @@ from datetime import datetime as dt
 
 import awswrangler as wr
 import pandas as pd
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 
 from .Connector import Destination
 from .systems.util import update_loader_status, validate_kwargs
@@ -76,57 +76,62 @@ class Loader:
         #Queries to run.
 
         print(f"Incoming table is {targetTable}")
-        
-        create = f"create table if not exists {temp} (like {targetTable});"
-        drop = f"drop table {temp}"
-        transact = f"""
-                    begin transaction;
+        if not inspect(engine).has_table(targetTable):
+            print(f'{targetTable} not found, creating...')
+            df.to_sql(targetTable, engine, index=False, if_exists='append')
+            print(f'{targetTable} created and loaded')
+        else:
+            create = f"create table if not exists {temp} (like {targetTable});"
+            drop = f"drop table {temp}"
+            transact = f"""
+                        begin transaction;
 
-                    delete from {targetTable} using {temp} where {targetTable}.{pk} = {temp}.{pk};
+                        delete from {targetTable} using {temp} where {targetTable}.{pk} = {temp}.{pk};
 
-                    insert into {targetTable} select * from {temp};
+                        insert into {targetTable} select * from {temp};
 
-                    drop table {temp};
+                        drop table {temp};
 
-                    end transaction;
-                """
-        
-        #Commence update attempt
-        try:
-            print(f"Creating temp table {temp}")
-            create_response, transact_response = 0, 0
+                        end transaction;
+                    """
             
-            with engine.begin() as conne:
-                create_res = conne.execute(text(create))
-                create_response += create_res.rowcount
-                if not create_response:
-                    msg = (f"Failure creating {temp} table")
-                    print(msg)
-                    raise OplogWorksError("insert_update_record()", f"\nError message => {msg}")
-                    # capture_exception()
-                    return False, msg
+            #Commence update attempt
             try:
-                df.to_sql(temp, engine, index=False, if_exists='append')
+                print(f"Creating temp table {temp}")
+                create_response, transact_response = 0, 0
+                
+                with engine.begin() as conne:
+                    create_res = conne.execute(text(create))
+                    create_response += create_res.rowcount
+                    if not create_response:
+                        msg = (f"Failure creating {temp} table")
+                        print(msg)
+                        raise OplogWorksError("insert_update_record()", f"\nError message => {msg}")
+                        # capture_exception()
+                        return False, msg
+                try:
+                    df.to_sql(temp, engine, index=False, if_exists='append')
+                except Exception as e:
+                    with engine.begin() as conne:
+                        conne.execute(text(drop))
+                        raise OplogWorksError("insert_update_record()", f"\nError message => {str(e)}")
+                        # # capture_exception()
+                        # return False, f"We could not load the temp table.\nErro: => {e}"
+
+                with engine.begin() as conne:
+                    transact_res = conne.execute(text(transact))
+                    if transact_res:
+                        print("Transaction Successful")
+                        transact_response += transact_res.rowcount
+                # update_loader_status(mongo_conn)
+                return True, "Transaction successful!"
             except Exception as e:
+                msg = f"Problem writing to RedshiftConn: => {e}"
                 with engine.begin() as conne:
                     conne.execute(text(drop))
-                    raise OplogWorksError("insert_update_record()", f"\nError message => {str(e)}")
-                    # # capture_exception()
-                    # return False, f"We could not load the temp table.\nErro: => {e}"
-
-            with engine.begin() as conne:
-                transact_res = conne.execute(text(transact))
-                if transact_res:
-                    print("Transaction Successful")
-                    transact_response += transact_res.rowcount
-            # update_loader_status(mongo_conn)
-            return True, "Transaction successful!"
-        except Exception as e:
-            msg = f"Problem writing to RedshiftConn: => {e}"
-            with engine.begin() as conne:
-                conne.execute(text(drop))
-            # capture_exception(e)
-            return False, str(e)
+                # capture_exception(e)
+                return False, str(e)
+        return True, "Transaction successful!"
         
 
     def load_datalake(self, *args, **kwargs):
