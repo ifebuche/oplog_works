@@ -15,8 +15,7 @@ from numpy import insert
 from pymongo import DESCENDING
 from ..Error import OplogWorksError
 
-environment = os.getenv('ENVIRONMENT')
-
+environment = os.getenv("ENVIRONMENT")
 
 
 """
@@ -31,10 +30,14 @@ environment = os.getenv('ENVIRONMENT')
 
 
 def update_loader_status(mongo_conn):
-
-    db = mongo_conn['metadata']
-    collection = db['metadata']
-    collection.find_one_and_update(filter= {},sort=[('_id', DESCENDING)],update={"$set":{"loader": True}},upsert=True)
+    db = mongo_conn["metadata"]
+    collection = db["metadata"]
+    collection.find_one_and_update(
+        filter={},
+        sort=[("_id", DESCENDING)],
+        update={"$set": {"loader": True}},
+        upsert=True,
+    )
 
 
 def get_timestamp(mongo_conn):
@@ -44,48 +47,58 @@ def get_timestamp(mongo_conn):
     with the current timestamp.
 
     Returns:
-        last_run (bson.timestamp.Timestamp): The most recent timestamp from the 'metadata' 
-                                            database, or the current timestamp if the 
+        last_run (bson.timestamp.Timestamp): The most recent timestamp from the 'metadata'
+                                            database, or the current timestamp if the
                                             'metadata' database was just created.
     """
-    
+
     db = mongo_conn["metadata"]
     collection = db["metadata"]
     # Try to retrieve the last document
-    last_document = collection.find_one(filter={'loader': True},sort=[('_id', DESCENDING)])
+    last_document = collection.find_one(
+        filter={"loader": True}, sort=[("_id", DESCENDING)]
+    )
 
     # If the collection is empty or there are no documents, insert the dictionary
     if not last_document:
-        #Create new document 
+        # Create new document
         last_run = Timestamp(time=math.ceil(time.time()), inc=0)
         last_document = {
-            "timestamp": last_run, 
+            "timestamp": last_run,
             "date": datetime.datetime.now(),
-            "loader": False
-                }
+            "loader": False,
+        }
 
         collection.insert_one(last_document)
 
-    return last_document['timestamp']
+    return last_document["timestamp"]
 
-    
+
 def append_timestamp(mongo_conn):
-    """Append a new document with run time and status to the 'metadata' collection. 
-    """
+    """Append a new document with run time and status to the 'metadata' collection."""
     db = mongo_conn["metadata"]
     collection = db["metadata"]
     current_time = Timestamp(time=math.ceil(time.time()), inc=0)
     new_document = {
-            "timestamp": current_time, 
-            "date": datetime.datetime.now(),
-            "loader": False
-                }
+        "timestamp": current_time,
+        "date": datetime.datetime.now(),
+        "loader": False,
+    }
 
     collection.insert_one(new_document)
 
 
-def validate_kwargs(kwargs,required_params,func):
+def validate_kwargs(kwargs, required_params, func):
     missing_params = [param for param in required_params if param not in kwargs]
-    
+
     if missing_params:
         raise OplogWorksError(func, f"{', '.join(missing_params)} are missing")
+
+
+def validate_date_format(date_str: str):
+    # Function to validate the backfill date input
+    try:
+        datetime.strptime(date_str, "%d-%m-%Y")
+
+    except ValueError:
+        raise ValueError(f"The date {date_str} is not in the 'dd-mm-yy' format.")

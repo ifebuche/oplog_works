@@ -11,3 +11,6 @@ psycopg2-bianry
 snowflake-connector-python
 sqlalchemy
 snowflake-sqlalchemy
+pylint
+black
+mypy
