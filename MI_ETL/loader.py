@@ -1,5 +1,6 @@
 import os
 import random
+import json
 from datetime import datetime as dt
 
 import awswrangler as wr
@@ -7,7 +8,7 @@ import pandas as pd
 from sqlalchemy import text, inspect
 
 from .Connector import Destination
-from .systems.util import update_loader_status, validate_kwargs
+from .systems.util import update_loader_status, validate_kwargs, schema_validation
 from .Error import OplogWorksError
 
 environment = os.getenv("ENVIRONMENT")
@@ -59,7 +60,7 @@ class Loader:
         return True, "Success"
 
     @staticmethod
-    def insert_update_record(engine, df, targetTable, pk="_id"):
+    def insert_update_record(engine,schema_on_conflict, df, targetTable, pk="_id"):
         """
         Update redhsift table via transaction.
 
@@ -76,13 +77,19 @@ class Loader:
         )  # Name for our temporary table. An appendage of 'temp123' to main table name. Using same value could mean that at high velocity, temp table is destroyed while in use with the drop after a write
 
         # Queries to run.
-
+        x = df.select_dtypes(include=['object']).columns
+        for i in x:
+            df[i] = list(map(lambda x: json.dumps(x), df[i]))
+            
         print(f"Incoming table is {targetTable}")
         if not inspect(engine).has_table(targetTable):
             print(f"{targetTable} not found, creating...")
             df.to_sql(targetTable, engine, index=False, if_exists="append")
             print(f"{targetTable} created and loaded")
         else:
+            #schema validation
+            df = schema_validation(targetTable,engine,df,schema_on_conflict)
+            
             create = f"create table if not exists {temp} (like {targetTable});"
             drop = f"drop table {temp}"
             transact = f"""
@@ -95,7 +102,7 @@ class Loader:
                         drop table {temp};
 
                         end transaction;
-                    """
+                    """.replace('None', 'NULL')
 
             # Commence update attempt
             try:
@@ -175,7 +182,7 @@ class Loader:
 
         return outcome
 
-    def load_warehouse(self, **kwargs):
+    def load_warehouse(self,schema_on_conflict, **kwargs):
         validate_kwargs(
             kwargs, ["user", "password", "host", "db", "port"], "load_warehouse"
         )
@@ -197,6 +204,7 @@ class Loader:
             if collection != "metadata":
                 ok, message = self.insert_update_record(
                     engine=engine,
+                    schema_on_conflict=schema_on_conflict,
                     df=self.data[collection],
                     targetTable=collection,
                     pk="_id",
@@ -221,14 +229,16 @@ class Loader:
         update_loader_status(mongo_conn=self.mongo_conn)
         return outcome
 
-    def run(self, datalake=None, warehouse=None, **kwargs):
+    def run(self, datalake=None, warehouse=None, schema_on_conflict='PASS', **kwargs):
         # docs should clear on what kwargs want to achieve
+        if schema_on_conflict not in ("PASS",'FAIL'):
+            raise OplogWorksError('run','Inavlid argument for schema_on_conflict')
         run_details = {}
         if datalake:
             run_details["datalake"] = self.load_datalake(**kwargs)
 
         if warehouse:
-            run_details["datawarehouse"] = self.load_warehouse(**kwargs)
+            run_details["datawarehouse"] = self.load_warehouse(schema_on_conflict,**kwargs)
             # write metadata
         return run_details
 

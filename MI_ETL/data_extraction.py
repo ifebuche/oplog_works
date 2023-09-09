@@ -114,8 +114,9 @@ class DataExtraction:
 
         extract_start_time = datetime.datetime.now()
 
-        validate_date_format(self.backfill)
+
         if self.backfill is not None:
+            validate_date_format(self.backfill)
             date_format = "%Y/%m/%d"  # Format of the input string
             parsed_date = datetime.datetime.strptime(self.backfill, date_format)
             filter_time = Timestamp(parsed_date, inc=0)
