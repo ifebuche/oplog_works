@@ -98,7 +98,44 @@ def validate_kwargs(kwargs, required_params, func):
 def validate_date_format(date_str: str):
     # Function to validate the backfill date input
     try:
-        datetime.strptime(date_str, "%d-%m-%Y")
+        datetime.datetime.strptime(date_str, "%Y/%m/%d")
 
     except ValueError:
         raise ValueError(f"The date {date_str} is not in the 'dd-mm-yy' format.")
+
+def schema_validation(table_name,engine,df,status):
+    column_values = pd.read_sql(f"""select  * from {table_name} limit 1""", engine)
+
+    # Convert the fetched values into a list
+    columns_list = column_values.columns.tolist()
+    # print(columns_list)
+    # Create an empty DataFrame with the fetched values as column names
+    schema_df = pd.DataFrame(columns=columns_list)
+    # print(df.columns)
+    missing_in_df1 = set(schema_df.columns) - set(df.columns)
+    # print(missing_in_df1)
+    columns_to_drop = set(df.columns) - set(schema_df.columns)
+    
+    #check if all warehouse columns is in incoming
+    if missing_in_df1 and status =='FAIL':
+        print('some columns missing', missing_in_df1)
+        raise OplogWorksError('schema validation',f"Following columns are missing {' ,'.join(missing_in_df1)}")
+    print(columns_to_drop)
+    if columns_to_drop and status !='FAIL':
+        print('fail status')
+        try:
+            df.drop(columns=list(columns_to_drop),inplace=True)
+        except:
+            raise OplogWorksError('schema validation',f"Following columns are not present in current schema {' ,'.join(columns_to_drop)}")
+    
+    # print('adding new columns')
+    # for columns in columns_to_drop:
+    #     query = f"""ALTER TABLE {table_name} ADD COLUMN {columns} VARCHAR """
+    #     print(query)
+    #     with engine.connect() as con:
+    #         con.execute(query)
+    resolved_df = pd.concat([schema_df,df])
+    # resolved_df.fillna(, inplace=True)
+
+
+    return resolved_df
