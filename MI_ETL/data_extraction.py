@@ -2,6 +2,7 @@ import datetime
 import re
 from collections import defaultdict
 
+import logging
 import pandas as pd
 import pymongo
 from bson import ObjectId, Timestamp
@@ -104,7 +105,8 @@ class DataExtraction:
             collection_df (dict): A dictionary with the collection name as the key and the new data as the value in the
             form of a DataFrame.
         """
-
+        logging.basicConfig(level='INFO', format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+        logging.info("Data extraction started")
         append_timestamp(self.connection)
 
         last_time = get_timestamp(self.connection)
@@ -120,11 +122,11 @@ class DataExtraction:
             date_format = "%Y/%m/%d"  # Format of the input string
             parsed_date = datetime.datetime.strptime(self.backfill, date_format)
             filter_time = Timestamp(parsed_date, inc=0)
-            print(filter_time)
+            
 
         else:
             filter_time = last_time
-            print(filter_time)
+            
 
         if self.extract_all is None:
             cursor = self.oplog_con.find(
@@ -173,4 +175,5 @@ class DataExtraction:
                         str(line) for line in collection_df[k][col]
                     ]
 
+        logging.info("Data extraction ended")
         return collection_df
