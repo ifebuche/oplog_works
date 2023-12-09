@@ -234,8 +234,9 @@ class Loader:
         if schema_on_conflict not in ("PASS",'FAIL'):
             raise OplogWorksError('run','Inavlid argument for schema_on_conflict')
         run_details = {}
-        if datalake:
-            run_details["datalake"] = self.load_datalake(**kwargs)
+        
+        # if datalake:
+        #     run_details["datalake"] = self.load_datalake(**kwargs)
 
         if warehouse:
             run_details["datawarehouse"] = self.load_warehouse(schema_on_conflict,**kwargs)
