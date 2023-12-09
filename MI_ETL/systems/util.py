@@ -111,13 +111,15 @@ def schema_validation(table_name,engine,df,status):
     # print(columns_list)
     # Create an empty DataFrame with the fetched values as column names
     schema_df = pd.DataFrame(columns=columns_list)
-    # print(df.columns)
+
+    # Columns present in warehouse but not in incoming data
     missing_in_df1 = set(schema_df.columns) - set(df.columns)
-    # print(missing_in_df1)
+
+    # Columns present in incoming data but not in final wearehouse
     columns_to_drop = set(df.columns) - set(schema_df.columns)
     
     #check if all warehouse columns is in incoming
-    if missing_in_df1 and status =='FAIL':
+    if missing_in_df1 or status =='FAIL':
         print('some columns missing', missing_in_df1)
         raise OplogWorksError('schema validation',f"Following columns are missing {' ,'.join(missing_in_df1)}")
     print(columns_to_drop)
