@@ -88,7 +88,4 @@ class Alert:
             except Exception as e:
                 print(f"Failed to send email to {name} - {item}. Error: {str(e)}")
 
-    @staticmethod
-    def sms(message):
-        print("Sending SMS alert")
 

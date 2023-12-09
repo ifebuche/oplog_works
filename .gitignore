@@ -59,4 +59,5 @@ venv
 *.csv
 *.parquet
 *.json
-data_extraction_optimized.py
+data_extraction_local.py
+code_check.sh
