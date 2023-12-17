@@ -12,9 +12,6 @@ from .Error import OplogWorksError
 from .systems.util import (schema_validation, update_loader_status,
                            validate_kwargs)
 
-environment = os.getenv("ENVIRONMENT")
-
-
 class Loader:
     """
     Define Lake and Warehouse options
@@ -77,12 +74,10 @@ class Loader:
             targetTable + "_temp" + str(random_number)
         )  # Name for our temporary table. An appendage of 'temp123' to main table name. Using same value could mean that at high velocity, temp table is destroyed while in use with the drop after a write
 
-        # Queries to run.
-        print("---------", df)
-        print(type(df))
-        x = df.select_dtypes(include=["object"]).columns
-        for i in x:
-            df[i] = list(map(lambda x: json.dumps(x), df[i]))
+        #find another way to allow json data in columns to not break the insert
+        # x = df.select_dtypes(include=["object"]).columns
+        # for i in x:
+        #     df[i] = list(map(lambda x: json.dumps(x), df[i]))
 
         print(f"Incoming table is {targetTable}")
         if not inspect(engine).has_table(targetTable):
