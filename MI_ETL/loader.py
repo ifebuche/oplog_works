@@ -77,6 +77,8 @@ class Loader:
         )  # Name for our temporary table. An appendage of 'temp123' to main table name. Using same value could mean that at high velocity, temp table is destroyed while in use with the drop after a write
 
         # Queries to run.
+        print('---------',df)
+        print(type(df))
         x = df.select_dtypes(include=['object']).columns
         for i in x:
             df[i] = list(map(lambda x: json.dumps(x), df[i]))
@@ -227,6 +229,7 @@ class Loader:
         }
 
         update_loader_status(mongo_conn=self.mongo_conn)
+        engine.dispose()
         return outcome
 
     def run(self, datalake=None, warehouse=None, schema_on_conflict='PASS', **kwargs):

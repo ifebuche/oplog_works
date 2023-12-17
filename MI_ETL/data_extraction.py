@@ -169,13 +169,15 @@ class DataExtraction:
         # Alert.email()
         collection_df = {}
         for k, v in enitre_doc.items():
-            if k != 'metadata':
+            if k not in ('metadata','$cmd'):
                 collection_df[k] = pd.json_normalize(v, max_level=0)
                 for col in collection_df[k].columns:
                     if type(collection_df[k][col].iloc[0]) == ObjectId:
                         collection_df[k][col] = [
                             str(line) for line in collection_df[k][col]
                         ]
+            
+
 
         logging.info("Data extraction ended")
         
