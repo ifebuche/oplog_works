@@ -13,6 +13,7 @@ import pandas as pd
 from bson import Timestamp
 from numpy import insert
 from pymongo import DESCENDING
+
 from ..Error import OplogWorksError
 
 environment = os.getenv("ENVIRONMENT")
@@ -103,7 +104,8 @@ def validate_date_format(date_str: str):
     except ValueError:
         raise ValueError(f"The date {date_str} is not in the 'dd-mm-yy' format.")
 
-def schema_validation(table_name,engine,df,status):
+
+def schema_validation(table_name, engine, df, status):
     column_values = pd.read_sql(f"""select  * from {table_name} limit 1""", engine)
 
     # Convert the fetched values into a list
@@ -117,30 +119,35 @@ def schema_validation(table_name,engine,df,status):
 
     # Columns present in incoming data but not in final wearehouse
     columns_to_drop = set(df.columns) - set(schema_df.columns)
-    
-    #check if all warehouse columns is in incoming
-    if status =='FAIL' and columns_to_drop:
 
-        raise OplogWorksError('schema validation',f"Following columns are missing {' ,'.join(columns_to_drop)}")
-    if status == 'FAIL' and missing_in_df1:
+    # check if all warehouse columns is in incoming
+    if status == "FAIL" and columns_to_drop:
+        raise OplogWorksError(
+            "schema validation",
+            f"Following columns are missing {' ,'.join(columns_to_drop)}",
+        )
+    if status == "FAIL" and missing_in_df1:
+        raise OplogWorksError(
+            "schema validation",
+            f"Following columns are missing {' ,'.join(columns_to_drop)}",
+        )
 
-        raise OplogWorksError('schema validation',f"Following columns are missing {' ,'.join(columns_to_drop)}")
-    
-    if columns_to_drop and status !='FAIL':
-
+    if columns_to_drop and status != "FAIL":
         try:
-            df.drop(columns=list(columns_to_drop),inplace=True)
-        except:
-            raise OplogWorksError('schema validation',f"Following columns are not present in current schema {' ,'.join(columns_to_drop)}")
-    
+            df.drop(columns=list(columns_to_drop), inplace=True)
+        except KeyError:
+            raise OplogWorksError(
+                "schema validation",
+                f"Following columns are not present in current schema {' ,'.join(columns_to_drop)}",
+            )
+
     # print('adding new columns')
     # for columns in columns_to_drop:
     #     query = f"""ALTER TABLE {table_name} ADD COLUMN {columns} VARCHAR """
     #     print(query)
     #     with engine.connect() as con:
     #         con.execute(query)
-    resolved_df = pd.concat([schema_df,df])
+    resolved_df = pd.concat([schema_df, df])
     # resolved_df.fillna(, inplace=True)
-
 
     return resolved_df
