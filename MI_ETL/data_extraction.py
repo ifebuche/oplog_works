@@ -1,8 +1,8 @@
 import datetime
+import logging
 import re
 from collections import defaultdict
 
-import logging
 import pandas as pd
 import pymongo
 from bson import ObjectId, Timestamp
@@ -105,7 +105,11 @@ class DataExtraction:
             collection_df (dict): A dictionary with the collection name as the key and the new data as the value in the
             form of a DataFrame.
         """
-        logging.basicConfig(level='INFO', format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+        logging.basicConfig(
+            level="INFO",
+            format="%(asctime)s - %(message)s",
+            datefmt="%d-%b-%y %H:%M:%S",
+        )
         logging.info("Data extraction started")
         append_timestamp(self.connection)
 
@@ -116,17 +120,14 @@ class DataExtraction:
 
         extract_start_time = datetime.datetime.now()
 
-
         if self.backfill is not None:
             validate_date_format(self.backfill)
             date_format = "%Y/%m/%d"  # Format of the input string
             parsed_date = datetime.datetime.strptime(self.backfill, date_format)
             filter_time = Timestamp(parsed_date, inc=0)
-            
 
         else:
             filter_time = last_time
-            
 
         if self.extract_all is None:
             cursor = self.oplog_con.find(
@@ -164,21 +165,18 @@ class DataExtraction:
             data_dict_update, data_dict_insert
         )
 
-
         # # Need ideas on this alert logic : Do we make it mandatory for users to have an alert?
         # Alert.email()
         collection_df = {}
         for k, v in enitre_doc.items():
-            if k not in ('metadata','$cmd'):
+            if k not in ("metadata", "$cmd"):
                 collection_df[k] = pd.json_normalize(v, max_level=0)
                 for col in collection_df[k].columns:
                     if type(collection_df[k][col].iloc[0]) == ObjectId:
                         collection_df[k][col] = [
                             str(line) for line in collection_df[k][col]
                         ]
-            
-
 
         logging.info("Data extraction ended")
-        
+
         return collection_df

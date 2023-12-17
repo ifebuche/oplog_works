@@ -73,14 +73,3 @@ class Destination:
             f'{redshift_details["database"]}'
         )
         return conn
-
-    # def redshift(redshift_details):
-    #     print(f"Connecting to Redshift")
-    #     conn = psycopg2.connect(
-    #         host=redshift_details['host'],
-    #         port=redshift_details['port'],
-    #         database=redshift_details['database'],
-    #         user=redshift_details['user'],
-    #         password=redshift_details['password']
-    #     )
-    #     return conn
