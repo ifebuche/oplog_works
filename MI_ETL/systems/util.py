@@ -119,12 +119,15 @@ def schema_validation(table_name,engine,df,status):
     columns_to_drop = set(df.columns) - set(schema_df.columns)
     
     #check if all warehouse columns is in incoming
-    if missing_in_df1 or status =='FAIL':
-        print('some columns missing', missing_in_df1)
-        raise OplogWorksError('schema validation',f"Following columns are missing {' ,'.join(missing_in_df1)}")
-    print(columns_to_drop)
+    if status =='FAIL' and columns_to_drop:
+
+        raise OplogWorksError('schema validation',f"Following columns are missing {' ,'.join(columns_to_drop)}")
+    if status == 'FAIL' and missing_in_df1:
+
+        raise OplogWorksError('schema validation',f"Following columns are missing {' ,'.join(columns_to_drop)}")
+    
     if columns_to_drop and status !='FAIL':
-        print('fail status')
+
         try:
             df.drop(columns=list(columns_to_drop),inplace=True)
         except:
