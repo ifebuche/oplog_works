@@ -1,5 +1,5 @@
 # MI-ETLx
-**A python module for incremental ETL on a MongoDB cluster** 
+**A python module for incremental Extract and Load** 
 
 *Data on point - The Smart Way to Extract and Load*
 
@@ -25,6 +25,15 @@ MI-ETL takes advantage of the change data capture (CDC) feature in MongoDB, the 
 
 MI-ETL is focused initially on MongoDB but can be extended to included other types of dbs. DynamoDB streams for example could be incorporated for DynamoDB change events. -->
 
+## Supported datastores
+
+| NOSQL DB | LAKE     | WAREHOUSE and SINK DB|
+| -------- | -------- | ---------            |   
+| MongoDB  | S3       | REDSHIFT             |
+|          |          | POSTGREDDB           |
+
+
+
 ## INSTALLATION
 To see MI-ETLx in action on your own data: 
 
@@ -36,3 +45,4 @@ pip install MI_ETLx
 
 ## QUICK START
 To use MI-ETLx, a package that extracts incremental data and loads them to target database, lakes and warehouse
+
