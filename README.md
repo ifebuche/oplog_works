@@ -1,5 +1,5 @@
 # MI-ETLx
-** A python module for incremental ETL on a MongoDB cluster** 
+**A python module for incremental ETL on a MongoDB cluster** 
 
 *Data on point - The Smart Way to Extract and Load*
 
