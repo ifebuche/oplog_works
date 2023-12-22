@@ -47,7 +47,7 @@ class TestDataExtraction(unittest.TestCase):
         print("olpog insert", dt)
 
         self.assertEqual(len(extracted_data[self.collection_name]), 2)
-        print('extracted----' , dt)
+        print('extracted----' , dt) 
         print('assert-------', self.test_documents)
         self.assertCountEqual(dt, self.test_documents)
 
