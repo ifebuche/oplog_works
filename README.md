@@ -63,7 +63,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 		</tr>
 		<tr>
 			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/awss3.jpg" />
+				<img height="40" src="./docs/awss3.jpg" />
 			</td>
 			<td style="width: 200px;">
 				<a href="https://docs.greatexpectations.io/docs/guides/setup/configuring_data_docs/host_and_share_data_docs">
