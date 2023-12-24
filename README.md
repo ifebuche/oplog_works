@@ -40,9 +40,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 				<img height="40" src="./docs/MongoDB-Logo.jpg" />
 			</td>
 			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/integrations/integration_datahub/">
-					MongoDB
-				</a>
+				<h4>Mongo DB</h4>
 			</td>
 			<td>
 				Data Catalog
@@ -53,9 +51,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 				<img height="40" src="./docs/datasource_redshift.jpg" />
 			</td>
 			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/database/redshift/">
-					AWS Redshift
-				</a>
+				<h4>AWS Redshift</h4>
 			</td>
 			<td>
 				Data Source
@@ -66,9 +62,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 				<img height="40" src="./docs/awss3.jpg" />
 			</td>
 			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/guides/setup/configuring_data_docs/host_and_share_data_docs">
-					AWS S3
-				</a>
+				<h4>AWS S3</h4>
 			</td>
 			<td>
 				Data Source
@@ -80,9 +74,6 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 			</td>
 			<td style="width: 200px;">
 				<h4>PostgresSQL</h4>
-				<a href="https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/database/postgres/">
-					PostgreSQL
-				</a>
 			</td>
 			<td>
 				Data Source
@@ -93,9 +84,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 				<img height="40" src="./docs/snowflake.jpg" />
 			</td>
 			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/database/snowflake/">
-					Snowflake
-				</a>
+				<h4>Snowflake</h4>
 			</td>
 			<td>
 				Data Source
