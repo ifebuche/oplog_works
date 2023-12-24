@@ -79,6 +79,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 				<img height="40" src="./docs/postgres.jpg" />
 			</td>
 			<td style="width: 200px;">
+				<h4>PostgresSQL</h4>
 				<a href="https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/database/postgres/">
 					PostgreSQL
 				</a>
