@@ -43,7 +43,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 				<h4>Mongo DB</h4>
 			</td>
 			<td>
-				Data Catalog
+				Data Source
 			</td>
 		</tr>
 		<tr>
@@ -54,7 +54,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 				<h4>AWS Redshift</h4>
 			</td>
 			<td>
-				Data Source
+				Data Sink
 			</td>
 		</tr>
 		<tr>
@@ -65,7 +65,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 				<h4>AWS S3</h4>
 			</td>
 			<td>
-				Data Source
+				Data Sink
 			</td>
 		</tr>
 		<tr>
@@ -76,7 +76,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 				<h4>PostgresSQL</h4>
 			</td>
 			<td>
-				Data Source
+				Data Sink
 			</td>
 		</tr>
 		<tr>
@@ -87,7 +87,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 				<h4>Snowflake</h4>
 			</td>
 			<td>
-				Data Source
+				Data Sink
 			</td>
 		</tr>
 	</tbody>
