@@ -31,7 +31,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 	<thead>
 		<tr>
 			<th colspan="2">Integration</th>
-			<th>Notes</th>
+			<th>Destination</th>
 		</tr>
 	</thead>
 	<tbody>
