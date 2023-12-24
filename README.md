@@ -37,11 +37,11 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 	<tbody>
 		<tr>
 			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/datahub_logo.jpg" />
+				<img height="40" src="./docs/MongoDB-Logo.jpg" />
 			</td>
 			<td style="width: 200px;">
 				<a href="https://docs.greatexpectations.io/docs/integrations/integration_datahub/">
-					DataHub
+					MongoDB
 				</a>
 			</td>
 			<td>
@@ -50,7 +50,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 		</tr>
 		<tr>
 			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/datasource_redshift.jpg" />
+				<img height="40" src="./docs/datasource_redshift.jpg" />
 			</td>
 			<td style="width: 200px;">
 				<a href="https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/database/redshift/">
@@ -167,7 +167,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 		</tr>
 		<tr>
 			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/snowflake.jpg" />
+				<img height="40" src="./docs/snowflake.jpg" />
 			</td>
 			<td style="width: 200px;">
 				<a href="https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/database/snowflake/">
