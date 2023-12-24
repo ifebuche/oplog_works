@@ -19,7 +19,7 @@ class TestDataExtraction(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = pymongo.MongoClient(os.getenv("mongo_conn"))
-        cls.db_name = "josephsTest2"
+        cls.db_name = "josephsTest" + str(randint(25, 2000))
         cls.collection_name = "user" + str(randint(25, 2000))
 
         cls.client.drop_database(cls.db_name)
@@ -32,22 +32,22 @@ class TestDataExtraction(unittest.TestCase):
             {"_id": "kjbdkjanjkankjn", "data": "test2"},
         ]
         col = cls.collection.insert_many(cls.test_documents)
-
-    def tearDown(self):
-        self.client.drop_database(self.db_name)
+    @classmethod
+    def tearDownClass(cls):
+        cls.client.drop_database(cls.db_name)
 
     def test_data_extraction(self):
         data = list(self.collection.find({}))
         print("Mongo Data", data)
 
-        extractor = DataExtraction(connection=self.client, db=self.db_name)
+        extractor = DataExtraction(connection=self.client, db=self.db_name, extract_all=[self.collection_name])
         extracted_data = extractor.extract_oplog_data()
 
         dt = json.loads(extracted_data[self.collection_name].to_json(orient="records"))
         print("olpog insert", dt)
 
         self.assertEqual(len(extracted_data[self.collection_name]), 2)
-        print('extracted----' , dt)
+        print('extracted----' , dt) 
         print('assert-------', self.test_documents)
         self.assertCountEqual(dt, self.test_documents)
 
@@ -55,8 +55,9 @@ class TestDataExtraction(unittest.TestCase):
         self.collection.update_one(
             {"_id": "bhjbdjhdjs"}, {"$set": {"data": "updated_test1"}}, upsert=True
         )
-
-        extractor = DataExtraction(connection=self.client, db=self.db_name)
+        print(self.db_name)
+        
+        extractor = DataExtraction(connection=self.client, db=self.db_name,extract_all=[self.collection_name])
         extracted_data = extractor.extract_oplog_data()
         dt = json.loads(extracted_data[self.collection_name].to_json(orient="records"))
         
