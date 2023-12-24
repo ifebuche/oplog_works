@@ -149,7 +149,7 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 				</a>
 			</td>
 			<td>
-				Data Source
+				Data Sources
 			</td>
 		</tr>
 		<tr>
