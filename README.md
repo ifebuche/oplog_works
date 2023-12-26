@@ -107,3 +107,13 @@ pip install MI_ETLx
 ## QUICK START
 To use MI-ETLx, a package that extracts incremental data and loads them to target database, lakes and warehouse
 
+
+
+
+# Consider Nan for new columns, create column for missing and null it out
+# Specify the new column thats coming in but not in the source. create a log on that and send out.
+# Check oplog retention and cap period to help validate backfill
+
+## For MI-ETL to work
+1 - there should be a destination table created or a destination
+2 - NOTE!! To run mi-etl the loader should have a prefix or suffix (string) to pass to an original table name if exist.

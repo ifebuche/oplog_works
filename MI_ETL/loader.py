@@ -86,7 +86,7 @@ class Loader:
             print(f"{targetTable} created and loaded")
         else:
             # schema validation
-            df = schema_validation(targetTable, engine, df)
+            df, columns_to_drop = schema_validation(targetTable, engine, df)
 
             create = f"create table if not exists {temp} (like {targetTable});"
             drop = f"drop table {temp}"
@@ -137,14 +137,14 @@ class Loader:
                         print("Transaction Successful")
                         transact_response += transact_res.rowcount
                 # update_loader_status(mongo_conn)
-                return True, "Transaction successful!"
+                return True, "Transaction successful!" , columns_to_drop
             except Exception as e:
                 msg = f"Problem writing to RedshiftConn: => {e}"
                 with engine.begin() as conne:
                     conne.execute(text(drop))
                 # capture_exception(e)
-                return False, str(e)
-        return True, "Transaction successful!"
+                return False, str(e) , columns_to_drop
+        return True, "Transaction successful!", columns_to_drop
 
     def load_datalake(self, *args, **kwargs):
         validate_kwargs(kwargs, ["bucket_name"], "load_datalake")
@@ -198,11 +198,12 @@ class Loader:
         engine = Destination.redshift(redshift_params)
         failed_tables = []
         successful_tables = []
+        new_incoming = {}
         counter = 0
         #  = create_engine(f'postgresql://root:root@172.18.0.2:5432/postgres') #initialize enine
         for collection in self.data.keys():
             if collection != "metadata":
-                ok, message = self.insert_update_record(
+                ok, message, new_incoming_columns = self.insert_update_record(
                     engine=engine,
                     df=self.data[collection],
                     targetTable=collection,
@@ -214,6 +215,7 @@ class Loader:
                     failed_tables.append(collection)
                 else:
                     successful_tables.append(collection)
+                    new_incoming[collection] = new_incoming_columns
                     print(f"table '{collection}' succesful - {message}")
 
                 counter += 1
@@ -223,6 +225,7 @@ class Loader:
             "failed_tables": failed_tables,
             "message": f"{len(successful_tables)}/{counter} tables done.",
             "description": "Redshift load job result",
+            "New_incoming_column": new_incoming
         }
 
         update_loader_status(mongo_conn=self.mongo_conn)
@@ -250,3 +253,5 @@ class Loader:
         # move outside s3 to init
         # alert and lodinh should both alert
         # function for result metadata
+
+
