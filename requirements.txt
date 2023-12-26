@@ -1,0 +1,12 @@
+awswrangler==2.17.0
+pymongo==4.4.0
+pandas==1.4.4
+bson==0.5.10
+certifi==2022.9.24
+psycopg2-binary==2.9.5
+snowflake-connector-python==3.0.1
+sqlalchemy==1.4.50
+snowflake-sqlalchemy==1.4.4
+pylint
+black
+mypy==1.5.1
