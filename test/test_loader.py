@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import unittest
+import certifi
 from random import randint
 
 import pandas as pd
@@ -26,7 +27,7 @@ class TestLoader(unittest.TestCase):
             f'{os.getenv("db")}')
     @classmethod
     def setUpClass(cls):
-        cls.mongo_client = pymongo.MongoClient(os.getenv("mongo_conn"))
+        cls.mongo_client = pymongo.MongoClient(os.getenv("mongo_conn"), tlsCAFile=certifi.where())
         cls.test_dataframe = pd.DataFrame(data=[[1,2]], columns=["_id","data"])
         cls.test_table_name = "user" + str(randint(25, 2000))
 
@@ -55,9 +56,10 @@ class TestLoader(unittest.TestCase):
 
     def test_loader_new_row(self):
         print('----new row----')
-        new_row = {"_id": 2, "data": 3}
-        self.final[self.test_table_name] = self.final[self.test_table_name].append(new_row, ignore_index=True)
-        
+        new_row = pd.DataFrame([{"_id": 2, "data": 3}])
+        #self.final[self.test_table_name] = self.final[self.test_table_name].append(new_row, ignore_index=True)
+        self.final[self.test_table_name] = pd.concat([self.final[self.test_table_name], new_row])
+
         self.loader = Loader(self.mongo_client, self.final)
         self.loader.run(warehouse=True, host=os.getenv("host"), user=os.getenv("user"),
                         password=os.getenv("password"), db=os.getenv("db"), port=5432)
@@ -67,8 +69,10 @@ class TestLoader(unittest.TestCase):
 
     def test_loader_unknown_column(self):
         print('----unknown column----')
-        new_row = {"_id": 3, "data": 3, "new_col": "data"}
-        self.final[self.test_table_name] = self.final[self.test_table_name].append(new_row, ignore_index=True)
+        new_row = pd.DataFrame([{"_id": 3, "data": 3, "new_col": "data"}])
+        #self.final[self.test_table_name] = self.final[self.test_table_name].append(new_row, ignore_index=True)
+
+        self.final[self.test_table_name] = pd.concat([self.final[self.test_table_name], new_row])
         
         self.loader = Loader(self.mongo_client, self.final)
         self.loader.run(warehouse=True, host=os.getenv("host"), user=os.getenv("user"),
@@ -79,8 +83,10 @@ class TestLoader(unittest.TestCase):
 
     def test_loader_null_missing_column_(self):
         print('----missing column----')
-        new_row = {"_id": 4}
-        self.final[self.test_table_name] = self.final[self.test_table_name].append(new_row, ignore_index=True)
+        new_row = pd.DataFrame([{"_id": 4}])
+        #self.final[self.test_table_name] = self.final[self.test_table_name].append(new_row, ignore_index=True)
+
+        self.final[self.test_table_name] = pd.concat([self.final[self.test_table_name], new_row])
         
         self.loader = Loader(self.mongo_client, self.final)
         self.loader.run(schema_on_conflict="FAIL", warehouse=True, host=os.getenv("host"), user=os.getenv("user"),
