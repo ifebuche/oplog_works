@@ -78,12 +78,13 @@ class Loader:
         # x = df.select_dtypes(include=["object"]).columns
         # for i in x:
         #     df[i] = list(map(lambda x: json.dumps(x), df[i]))
-
+        columns_to_drop = None
         print(f"Incoming table is {targetTable}")
         if not inspect(engine).has_table(targetTable):
             print(f"{targetTable} not found, creating...")
             df.to_sql(targetTable, engine, index=False, if_exists="append")
             print(f"{targetTable} created and loaded")
+        
         else:
             # schema validation
             df, columns_to_drop = schema_validation(targetTable, engine, df)
