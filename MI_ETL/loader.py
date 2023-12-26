@@ -84,6 +84,7 @@ class Loader:
             print(f"{targetTable} not found, creating...")
             df.to_sql(targetTable, engine, index=False, if_exists="append")
             print(f"{targetTable} created and loaded")
+        
         else:
             # schema validation
             df, columns_to_drop = schema_validation(targetTable, engine, df)

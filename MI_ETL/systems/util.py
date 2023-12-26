@@ -149,9 +149,5 @@ def schema_validation(table_name, engine, df):
     #         con.execute(query)
     resolved_df = pd.concat([schema_df, df])
     # resolved_df.fillna(, inplace=True)
-    # if columns_to_drop:
-    #     return resolved_df, columns_to_drop
-    # else:
-    #     return resolved_df, None
 
     return resolved_df, columns_to_drop

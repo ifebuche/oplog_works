@@ -15,6 +15,9 @@ from MI_ETL.loader import Loader
 
 load_dotenv(find_dotenv())
 
+print(os.getenv('mongo_conn','cant find mongo con'))
+breakpoint()
+
 
 class TestLoader(unittest.TestCase):
 
