@@ -58,7 +58,7 @@ class Loader:
         return True, "Success"
 
     @staticmethod
-    def insert_update_record(engine, schema_on_conflict, df, targetTable, pk="_id"):
+    def insert_update_record(engine, df, targetTable, pk="_id"):
         """
         Update redhsift table via transaction.
 
@@ -86,7 +86,7 @@ class Loader:
             print(f"{targetTable} created and loaded")
         else:
             # schema validation
-            df = schema_validation(targetTable, engine, df, schema_on_conflict)
+            df = schema_validation(targetTable, engine, df)
 
             create = f"create table if not exists {temp} (like {targetTable});"
             drop = f"drop table {temp}"
@@ -182,7 +182,7 @@ class Loader:
 
         return outcome
 
-    def load_warehouse(self, schema_on_conflict, **kwargs):
+    def load_warehouse(self, **kwargs):
         validate_kwargs(
             kwargs, ["user", "password", "host", "db", "port"], "load_warehouse"
         )
@@ -204,7 +204,6 @@ class Loader:
             if collection != "metadata":
                 ok, message = self.insert_update_record(
                     engine=engine,
-                    schema_on_conflict=schema_on_conflict,
                     df=self.data[collection],
                     targetTable=collection,
                     pk="_id",
@@ -230,10 +229,9 @@ class Loader:
         engine.dispose()
         return outcome
 
-    def run(self, datalake=None, warehouse=None, schema_on_conflict="PASS", **kwargs):
+    def run(self, datalake=None, warehouse=None, **kwargs):
         # docs should clear on what kwargs want to achieve
-        if schema_on_conflict not in ("PASS", "FAIL"):
-            raise OplogWorksError("run", "Inavlid argument for schema_on_conflict")
+
         run_details = {}
 
         # if datalake:
@@ -241,7 +239,7 @@ class Loader:
 
         if warehouse:
             run_details["datawarehouse"] = self.load_warehouse(
-                schema_on_conflict, **kwargs
+                 **kwargs
             )
             # write metadata
         return run_details
