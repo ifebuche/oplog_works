@@ -11,7 +11,7 @@ from email.utils import formatdate
 
 import pandas as pd
 from bson import Timestamp
-from numpy import insert
+import numpy as np
 from pymongo import DESCENDING
 
 from ..Error import OplogWorksError
@@ -121,20 +121,19 @@ def schema_validation(table_name, engine, df, status):
     # Columns present in incoming data but not in final wearehouse
     columns_to_drop = set(df.columns) - set(schema_df.columns)
 
-    # check if all warehouse columns is in incoming
-    if status == "FAIL" and columns_to_drop:
-        raise OplogWorksError(
+
+    if  missing_in_df1:
+        print(
             "schema validation",
-            f"Following columns are missing {' ,'.join(columns_to_drop)}",
-        )
-    if status == "FAIL" and missing_in_df1:
-        raise OplogWorksError(
-            "schema validation",
-            f"Following columns are missing {' ,'.join(columns_to_drop)}",
+            f"Following columns are missing in incoming {' ,'.join(missing_in_df1)}",
         )
 
-    if columns_to_drop and status != "FAIL":
+    if columns_to_drop:
         try:
+            print(
+            "schema validation",
+            f"Following columns are extras {' ,'.join(columns_to_drop)}",
+        )
             df.drop(columns=list(columns_to_drop), inplace=True)
         except KeyError:
             raise OplogWorksError(

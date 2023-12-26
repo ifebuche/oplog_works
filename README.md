@@ -31,31 +31,16 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 	<thead>
 		<tr>
 			<th colspan="2">Integration</th>
-			<th>Notes</th>
+			<th>Destination</th>
 		</tr>
 	</thead>
 	<tbody>
 		<tr>
 			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/datahub_logo.jpg" />
+				<img height="40" src="./docs/MongoDB-Logo.jpg" />
 			</td>
 			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/integrations/integration_datahub/">
-					DataHub
-				</a>
-			</td>
-			<td>
-				Data Catalog
-			</td>
-		</tr>
-		<tr>
-			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/datasource_redshift.jpg" />
-			</td>
-			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/database/redshift/">
-					AWS Redshift
-				</a>
+				<h4>Mongo DB</h4>
 			</td>
 			<td>
 				Data Source
@@ -63,119 +48,46 @@ MI-ETL is focused initially on MongoDB but can be extended to included other typ
 		</tr>
 		<tr>
 			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/awss3.jpg" />
+				<img height="40" src="./docs/datasource_redshift.jpg" />
 			</td>
 			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/guides/setup/configuring_data_docs/host_and_share_data_docs">
-					AWS S3
-				</a>
+				<h4>AWS Redshift</h4>
 			</td>
 			<td>
-				Data Source
+				Data Sink
 			</td>
 		</tr>
 		<tr>
 			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/deepnote_logo_400x.jpg" />
+				<img height="40" src="./docs/awss3.jpg" />
 			</td>
 			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/deployment_patterns/how_to_use_great_expectations_in_deepnote/">
-					Deepnote
-				</a>
+				<h4>AWS S3</h4>
 			</td>
 			<td>
-				Collaborative data notebook
+				Data Sink
 			</td>
 		</tr>
 		<tr>
 			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/Google_Cloud_logo.jpg" />
+				<img height="40" src="./docs/postgres.jpg" />
 			</td>
 			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/fluent/database/connect_sql_source_data">
-					Google Cloud Platform &#40;GCP&#41;
-				</a>
+				<h4>PostgresSQL</h4>
 			</td>
 			<td>
-				Data Source
+				Data Sink
 			</td>
 		</tr>
 		<tr>
 			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/microsoft-azure-blob-storage-logo.jpg" />
+				<img height="40" src="./docs/snowflake.jpg" />
 			</td>
 			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/guides/setup/configuring_data_docs/host_and_share_data_docs/">
-					Microsoft Azure Blob Storage
-				</a>
+				<h4>Snowflake</h4>
 			</td>
 			<td>
-				Data Source
-			</td>
-		</tr>
-		<tr>
-			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/microsoft-sql-server-logo-96AF49E2B3-seeklogo.jpg" />
-			</td>
-			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/database/mssql">
-					Microsoft SQL Server
-				</a>
-			</td>
-			<td>
-				Data Source
-			</td>
-		</tr>
-		<tr>
-			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/mysql.jpg" />
-			</td>
-			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/database/mysql/">
-					MySQL
-				</a>
-			</td>
-			<td>
-				Data Source
-			</td>
-		</tr>
-		<tr>
-			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/pandas.jpg" />
-			</td>
-			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/in_memory/pandas/">
-					Pandas
-				</a>
-			</td>
-			<td>
-				Data Sources
-			</td>
-		</tr>
-		<tr>
-			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/postgres.jpg" />
-			</td>
-			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/database/postgres/">
-					PostgreSQL
-				</a>
-			</td>
-			<td>
-				Data Source
-			</td>
-		</tr>
-		<tr>
-			<td style="text-align: center; height: 40px; background-color: #fff;">
-				<img height="40" src="./docs/readme_assets/snowflake.jpg" />
-			</td>
-			<td style="width: 200px;">
-				<a href="https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/database/snowflake/">
-					Snowflake
-				</a>
-			</td>
-			<td>
-				Data Source
+				Data Sink
 			</td>
 		</tr>
 	</tbody>
