@@ -106,6 +106,7 @@ def validate_date_format(date_str: str):
 
 
 def schema_validation(table_name, engine, df, status):
+    
     column_values = pd.read_sql(f"""select  * from {table_name} limit 1""", engine)
 
     # Convert the fetched values into a list
@@ -149,5 +150,9 @@ def schema_validation(table_name, engine, df, status):
     #         con.execute(query)
     resolved_df = pd.concat([schema_df, df])
     # resolved_df.fillna(, inplace=True)
+    if columns_to_drop:
+        return resolved_df, columns_to_drop
+    else:
+        return resolved_df, None
 
-    return resolved_df
+    return resolved_df, columns_to_drop
