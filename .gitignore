@@ -51,7 +51,9 @@ Thumbs.db
 *.wmv
 
 date.csv
-*.ipynb
+test.ipynb
+test3.ipynb
+t.py
 
 *oplog_notebooks
 venv
