@@ -1,6 +1,5 @@
 import datetime
 import logging
-import re
 from collections import defaultdict
 
 import pandas as pd
@@ -9,9 +8,8 @@ from bson import ObjectId, Timestamp
 
 from .systems.util import append_timestamp, get_timestamp, validate_date_format
 
-
 class DataExtraction:
-    """Class for extracting recently inserted or modified data from a MongoDB database
+    """Class for extracting recently inserted or modified data from a MongoDB database with duplicates removed.
 
     This class tails the MongoDB operation logs (oplog) to capture recently inserted
     or modified data in the database collections and returns it in a structured format
@@ -39,8 +37,9 @@ class DataExtraction:
         extract_oplog_data()
     """
 
-    def __init__( self, connection: str, db: str, backfill=None, extract_all: list = []) -> None:
-        
+
+
+    def __init__(self, connection: pymongo.MongoClient, db: str, backfill=None, extract_all: list = []):
         """Initializes the DataExtraction with specified database and connection parameters.
 
         Args:
@@ -55,52 +54,49 @@ class DataExtraction:
         self.extract_all = extract_all
         self.oplog_con = self.connection.local.oplog.rs
         self.database = self.connection[self.db]
-        # backfill accepts time
         self.backfill = backfill
 
-    def handle_update_operation(self, doc, data_dict):
-        """Extract Updated document from the cursor
+    def handle_update_operation(self, doc: dict, data_dict: defaultdict):
+        """Extracts updated document ID from the oplog document and appends it to the provided dictionary.
 
         Args:
-            doc (json): mongodb single document
-            data_dict (dict): an empty dict to hold updated
+            doc (dict): The oplog document representing an update operation.
+            data_dict (defaultdict): The dictionary to append the document ID to.
         """
         collection_name = doc["ns"].split(".")[-1]
         data_dict[collection_name].append(doc["o2"]["_id"])
 
-    def handle_insert_operation(self, doc, data_dict):
-        """Extract inserted document from the cursor
+    def handle_insert_operation(self, doc: dict, data_dict: defaultdict):
+        """Extracts inserted document from the oplog document and appends it to the provided dictionary.
 
         Args:
-            doc (json): mongodb single document
-            data_dict (dict): an empty dict to hold updated
+            doc (dict): The oplog document representing an insert operation.
+            data_dict (defaultdict): The dictionary to append the document to.
         """
         df_dict = doc.get("o")
         collection_name = doc["ns"].split(".")[-1]
         data_dict[collection_name].append(df_dict)
 
-    # Delete operation can easily be added
-
-    def fix_duplicate_ids(self, data_dict_update):
-        """Removes the duplicate records in updates
-
-        Desc:
-            records with multiple updates will be trimmed to include last updated
+    def fix_duplicate_ids(self, data_dict_update: defaultdict) -> dict:
+        """Removes duplicate records in updates by ensuring only the last update is retained for each document.
 
         Args:
-            data_dict_update (json): mongodb single document
+            data_dict_update (defaultdict): The dictionary containing updated document IDs.
+
+        Returns:
+            dict: A dictionary with duplicate update entries removed.
         """
         return {key: list(set(value)) for key, value in data_dict_update.items()}
 
-    def remove_duplicate_docs(self, data_dict_insert, data_dict_update):
-        """Removes duplicate documents from inserts if they are present in updates
+    def remove_duplicate_docs(self, data_dict_insert: defaultdict, data_dict_update: defaultdict) -> defaultdict:
+        """Removes any inserted documents that have been updated later to ensure only the latest version is kept.
 
         Args:
-            data_dict_insert (dict): Dictionary holding inserted documents
-            data_dict_update (dict): Dictionary holding updated document IDs
+            data_dict_insert (defaultdict): Dictionary holding inserted documents.
+            data_dict_update (defaultdict): Dictionary holding updated document IDs.
 
         Returns:
-            dict: Dictionary with duplicate documents removed
+            defaultdict: The updated dictionary with duplicates removed from inserts.
         """
         for key in data_dict_insert.keys():
             if key in data_dict_update:
@@ -110,15 +106,15 @@ class DataExtraction:
                 ]
         return data_dict_insert
 
-    def extract_entire_doc_from_update(self, data_dict_update, data_dict_insert):
-        """combines insert and update into single dictionary
+    def extract_entire_doc_from_update(self, data_dict_update: defaultdict, data_dict_insert: defaultdict) -> defaultdict:
+        """Combines documents from insert and update operations into a single dictionary.
 
         Args:
-            data_dict_insert (dict): holds the modified recently inserted document
-            data_dict_update (dict): holds the recently updated document
+            data_dict_insert (defaultdict): Dictionary holding recently inserted documents.
+            data_dict_update (defaultdict): Dictionary holding recently updated documents.
 
         Returns:
-            data_dict_insert (dict): combined dictionary
+            defaultdict: The combined dictionary of inserted and updated documents.
         """
         for key, value in data_dict_update.items():
             collection_name = key
@@ -127,19 +123,17 @@ class DataExtraction:
                 data_dict_insert[collection_name].append(d)
         return data_dict_insert
 
-    def extract_oplog_data(self):
-        """Tail Oplog for recently inserted/modified data.
+    def extract_oplog_data(self) -> dict:
+        """Tails the MongoDB Oplog to extract recently inserted or modified data.
 
-        This function monitors the MongoDB Oplog (operations log) to capture recently inserted or modified data in the
-        database collections. The function returns a dictionary containing the collection name as the key and the new data
-        as the value in the form of a DataFrame.
+        Monitors the MongoDB Oplog to capture recently inserted or modified data in the
+        database collections and returns it in a structured format after removing any duplicates.
 
         Returns:
-            collection_df (dict): A dictionary with the collection name as the key and the new data as the value in the
-            form of a DataFrame.
+            dict: A dictionary with collection names as keys and lists of new data as values in DataFrame format.
         """
         logging.basicConfig(
-            level="INFO",
+            level=logging.INFO,
             format="%(asctime)s - %(message)s",
             datefmt="%d-%b-%y %H:%M:%S",
         )
@@ -147,35 +141,12 @@ class DataExtraction:
         append_timestamp(self.connection)
 
         last_time = get_timestamp(self.connection)
-
         data_dict_insert = defaultdict(list)
         data_dict_update = defaultdict(list)
-
         extract_start_time = datetime.datetime.now()
 
-        if self.backfill is not None:
-            validate_date_format(self.backfill)
-            date_format = "%Y/%m/%d"  # Format of the input string
-            parsed_date = datetime.datetime.strptime(self.backfill, date_format)
-            filter_time = Timestamp(parsed_date, inc=0)
-
-        else:
-            filter_time = last_time
-
-        if self.extract_all is None:
-            cursor = self.oplog_con.find(
-                {"ts": {"$gt": filter_time}},
-                cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
-                oplog_replay=True,
-            )
-        else:
-            # Optimize/ refactor
-            extract_all = "|".join("^" + f"{self.db}.{n}" for n in self.extract_all)
-            cursor = self.oplog_con.find(
-                {"ts": {"$gt": filter_time}, "ns": {"$regex": extract_all}},
-                cursor_type=pymongo.CursorType.TAILABLE_AWAIT,
-                oplog_replay=True,
-            )
+        filter_time = self.backfill if self.backfill else last_time
+        cursor = self._define_cursor(filter_time)
 
         while cursor.alive:
             for doc in cursor:
@@ -184,32 +155,18 @@ class DataExtraction:
                 else:
                     self.handle_insert_operation(doc=doc, data_dict=data_dict_insert)
 
-            if (datetime.datetime.now() - extract_start_time).total_seconds() > (
-                60 * 60
-            ) * 10:
+            if (datetime.datetime.now() - extract_start_time).total_seconds() > (60 * 60) * 10:
                 break
             break
 
         data_dict_update = self.fix_duplicate_ids(data_dict_update)
-        data_dict_insert = self.remove_duplicate_docs(
-            data_dict_insert, data_dict_update
-        )
-        enitre_doc = self.extract_entire_doc_from_update(
-            data_dict_update, data_dict_insert
-        )
+        data_dict_insert = self.remove_duplicate_docs(data_dict_insert, data_dict_update)
+        entire_doc = self.extract_entire_doc_from_update(data_dict_update, data_dict_insert)
 
-        # # Need ideas on this alert logic : Do we make it mandatory for users to have an alert?
-        # Alert.email()
-        collection_df = {}
-        for k, v in enitre_doc.items():
-            if k not in ("metadata", "$cmd"):
-                collection_df[k] = pd.json_normalize(v, max_level=0)
-                for col in collection_df[k].columns:
-                    if type(collection_df[k][col].iloc[0]) == ObjectId:
-                        collection_df[k][col] = [
-                            str(line) for line in collection_df[k][col]
-                        ]
+        collection_df = self._normalize_data(entire_doc)
 
         logging.info("Data extraction ended")
-
         return collection_df
+
+    # Placeholder for private methods that need to be implemented:
+    # _define_cursor, _normalize_data
