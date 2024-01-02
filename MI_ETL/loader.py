@@ -103,6 +103,7 @@ class Loader:
         #first database connection use by psycopg2, listen for OperationalError
         try:
             if not inspect(engine).has_table(targetTable):
+            # if not engine.dialect.has_table(engine, targetTable):
                 print(f"{targetTable} not found, creating...")
                 df.to_sql(targetTable, engine, index=False, if_exists="append")
                 print(f"{targetTable} created and loaded")
