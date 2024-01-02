@@ -68,6 +68,7 @@ class Destination:
     @staticmethod
     def redshift(redshift_details):
         print("connecting to redshift")
+        #This try/except is useless as psycopg2 does not try to validate the connection.
         try:
             conn = create_engine(
                 f'postgresql://{redshift_details["user"]}:{redshift_details["password"]}@'
