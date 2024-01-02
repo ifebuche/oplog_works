@@ -2,7 +2,7 @@ import boto3
 import certifi
 import psycopg2
 import pymongo
-import snowflake.connector
+# import snowflake.connector
 from sqlalchemy import create_engine
 
 
@@ -52,17 +52,17 @@ class Destination:
         )
         return s3_client
 
-    def snowflake(snowflake_details):
-        print(f"Connecting to Snowflake")
-        conn = snowflake.connector.connect(
-            user=snowflake_details["user"],
-            password=snowflake_details["password"],
-            account=snowflake_details["account"],
-            warehouse=snowflake_details["warehouse"],
-            database=snowflake_details["database"],
-            schema=snowflake_details["schema"],
-        )
-        return conn
+    # def snowflake(snowflake_details):
+    #     print(f"Connecting to Snowflake")
+    #     conn = snowflake.connector.connect(
+    #         user=snowflake_details["user"],
+    #         password=snowflake_details["password"],
+    #         account=snowflake_details["account"],
+    #         warehouse=snowflake_details["warehouse"],
+    #         database=snowflake_details["database"],
+    #         schema=snowflake_details["schema"],
+    #     )
+    #     return conn
 
     @staticmethod
     def redshift(redshift_details):

@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import unittest
+import certifi
 import json
 from random import randint
 from sqlalchemy import create_engine, inspect
@@ -22,7 +23,7 @@ class TestDataExtraction(unittest.TestCase):
 
     @classmethod
     def setup_mongodb(cls):
-        cls.mongo_client = pymongo.MongoClient(os.getenv('mongo_conn'))
+        cls.mongo_client = pymongo.MongoClient(os.getenv('mongo_conn'), tlsCAFile=certifi.where())
         cls.db_name = "josephsTest2"
         cls.collection_name = f"user{randint(25, 2000)}"
         cls.mongo_db = cls.mongo_client[cls.db_name]

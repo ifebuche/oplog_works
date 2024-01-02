@@ -11,12 +11,45 @@ from .systems.util import append_timestamp, get_timestamp, validate_date_format
 
 
 class DataExtraction:
-    """Extract recently inserted or modified data from source with duplicates removed"""
+    """Class for extracting recently inserted or modified data from a MongoDB database
 
-    def __init__(
-        self, connection: str, db: str, backfill=None, extract_all: list = []
-    ) -> None:
-        # Fix  timestamp to know where timestamp will be pulled from
+    This class tails the MongoDB operation logs (oplog) to capture recently inserted
+    or modified data in the database collections and returns it in a structured format
+    after removing any duplicates.
+
+    Attributes:
+        db (str): The database name to extract data from.
+        connection (pymongo.MongoClient): The connection to MongoDB.
+        extract_all (list): List of collection names to specifically extract data from.
+                            If empty, data is extracted from all collections.
+        oplog_con (pymongo.Collection): Connection to the MongoDB oplog for tailing operations.
+        database (pymongo.database.Database): The specific database to work on.
+        backfill (datetime or None): Specific start time for data extraction. If None,
+            extraction starts from the last saved timestamp.
+
+    Methods:
+        handle_update_operation(doc, data_dict): Process an update operation from the oplog.
+        handle_insert_operation(doc, data_dict): Process an insert operation from the oplog.
+        fix_duplicate_ids(data_dict_update): Remove duplicate records in the updates.
+        remove_duplicate_docs(data_dict_insert, data_dict_update): Remove duplicate documents from inserts.
+        extract_entire_doc_from_update(data_dict_update, data_dict_insert): Combine insert and update documents.
+        extract_oplog_data(): Tail the oplog for recently inserted/modified data.
+
+    Method Used:
+        extract_oplog_data()
+    """
+
+    def __init__( self, connection: str, db: str, backfill=None, extract_all: list = []) -> None:
+        
+        """Initializes the DataExtraction with specified database and connection parameters.
+
+        Args:
+            connection (pymongo.MongoClient): The connection to MongoDB.
+            db (str): The database name to extract data from.
+            backfill (datetime, optional): Specific start time for data extraction. Defaults to None.
+            extract_all (list, optional): List of collection names to specifically extract data from.
+                If empty, data is extracted from all collections. Defaults to an empty list.
+        """
         self.db = db
         self.connection = connection
         self.extract_all = extract_all

@@ -20,6 +20,8 @@ __pycache__
 
 # Package files
 *.jar
+myenv
+
 
 # Maven
 target/
@@ -50,9 +52,19 @@ Thumbs.db
 *.mov
 *.wmv
 
-date.csv
-*.ipynb
 
+requirements.txt
+requirements2.txt
+MI_ETLx.egg-info
+build
+
+
+date.csv
+test.ipynb
+test3.ipynb
+t.py
+env
+x
 *oplog_notebooks
 venv
 .env
@@ -61,3 +73,10 @@ venv
 *.json
 data_extraction_local.py
 code_check.sh
+
+
+#python setup.py bdist_wheel for bdist(binary file)
+
+#python setup.py sdist(source code file)
+
+#twine upload -r testpypi dist/*

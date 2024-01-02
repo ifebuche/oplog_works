@@ -14,24 +14,34 @@ from .systems.util import (schema_validation, update_loader_status,
 
 class Loader:
     """
-    Define Lake and Warehouse options
+    A class for handling the loading of data into data lakes and warehouses.
+
+    Provides functionalities to upload data to Amazon S3 and insert or update records
+    in data warehouses. It uses AWS Wrangler for S3 operations and SQLAlchemy for 
+    database interactions.
+
+    Attributes:
+        mongo_conn (MongoClient): MongoDB connection for updating loader status and retrieving timestamps.
+        data (dict): Data to be loaded, with keys as table/collection names and values as data in pandas DataFrame format.
     """
 
     def __init__(self, mongo_conn, data):
         self.mongo_conn = mongo_conn
         self.data = data
-        # initialize a class Loader,
+
 
     @staticmethod
     def s3_upload(s3_params):  # data, bucket_name:str, table_name, prefix:str = None):
-        """Upload dataframe to s3
+        """
+        Uploads a DataFrame to an S3 bucket.
 
         Args:
-            data (dataframe):
-            bucket_name (str): s3 bucket name
-            prefix (str): parent folder name
-            table_name (str): name of the table used as part of the filename
-            file_format (str, optional): filetye. Defaults to 'parquet'.
+            s3_params (dict): Parameters for the S3 upload including the DataFrame, 
+                              bucket name, table name, prefix, and file format.
+
+        Returns:
+            tuple: A tuple containing a boolean indicating success or failure, 
+                   and a message string describing the result of the operation.
         """
         validate_kwargs(s3_params, ["bucket_name", "table_name"], "s3_upload")
 
@@ -60,12 +70,20 @@ class Loader:
     @staticmethod
     def insert_update_record(engine, df, targetTable, pk="_id"):
         """
-        Update redhsift table via transaction.
+        Updates a table in a data warehouse using a transactional approach.
 
-        engine: sqlalchemy engine
-        df: processed table from the stream.
-        targetTable: table name on RedshiftConn
-        pk: key to join update on across both tables
+        This method creates a temporary table, performs deletion and insertion,
+        and then drops the temporary table to update the target table.
+
+        Args:
+            engine (sqlalchemy.engine.Engine): The SQL database engine.
+            df (pd.DataFrame): The DataFrame containing the data to be processed.
+            targetTable (str): The name of the target table in the database.
+            pk (str, optional): The primary key column name. Defaults to '_id'.
+
+        Returns:
+            tuple: A tuple containing a boolean indicating success or failure, 
+                   a message, and a list of new columns added to the table.
         """
         print("Commencing RedshiftConn write...")
 
@@ -148,6 +166,21 @@ class Loader:
         return True, "Transaction successful!", columns_to_drop
 
     def load_datalake(self, *args, **kwargs):
+        """
+        Loads data to an S3 data lake.
+
+        This method iterates over the data attribute and uploads each table/collection 
+        to an S3 bucket.
+
+        Args:
+            kwargs: Additional keyword arguments including the bucket name and optional prefix.
+
+        Returns:
+            dict: A summary of the loading operation, including lists of successfully 
+                  and unsuccessfully loaded tables.
+        """
+
+
         validate_kwargs(kwargs, ["bucket_name"], "load_datalake")
 
         s3_params = {"bucket_name": kwargs["bucket_name"]}
@@ -184,6 +217,19 @@ class Loader:
         return outcome
 
     def load_warehouse(self, **kwargs):
+        """
+        Loads data to a data warehouse.
+
+        This method iterates over the data attribute and inserts or updates each 
+        table/collection in the data warehouse.
+
+        Args:
+            kwargs: Additional keyword arguments for the warehouse connection.
+
+        Returns:
+            dict: A summary of the loading operation, including lists of successfully 
+                  and unsuccessfully loaded tables and any new incoming columns.
+        """
         validate_kwargs(
             kwargs, ["user", "password", "host", "db", "port"], "load_warehouse"
         )
@@ -234,6 +280,21 @@ class Loader:
         return outcome
 
     def run(self, datalake=None, warehouse=None, **kwargs):
+
+        """
+            Executes the data loading process.
+
+            This method can load data into a data lake, a data warehouse, or both,
+            depending on the provided arguments.
+
+            Args:
+                datalake (bool): If True, loads data into a data lake.
+                warehouse (bool): If True, loads data into a data warehouse.
+                kwargs: Additional keyword arguments.
+
+            Returns:
+                dict: A summary of the data loading operations.
+        """
         # docs should clear on what kwargs want to achieve
 
         run_details = {}
@@ -247,12 +308,5 @@ class Loader:
             )
             # write metadata
         return run_details
-
-        # validate that all the credentials were supplied for s3
-        # prefix should be optional
-        # add custom errors
-        # move outside s3 to init
-        # alert and lodinh should both alert
-        # function for result metadata
 
 
