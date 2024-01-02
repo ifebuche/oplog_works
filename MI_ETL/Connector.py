@@ -4,6 +4,7 @@ import psycopg2
 import pymongo
 # import snowflake.connector
 from sqlalchemy import create_engine
+from MI_ETL.Error import OplogWorksError
 
 
 class Source:
@@ -67,9 +68,13 @@ class Destination:
     @staticmethod
     def redshift(redshift_details):
         print("connecting to redshift")
-        conn = create_engine(
-            f'postgresql://{redshift_details["user"]}:{redshift_details["password"]}@'
-            f'{redshift_details["host"]}:{redshift_details["port"]}/'
-            f'{redshift_details["database"]}'
-        )
-        return conn
+        try:
+            conn = create_engine(
+                f'postgresql://{redshift_details["user"]}:{redshift_details["password"]}@'
+                f'{redshift_details["host"]}:{redshift_details["port"]}/'
+                f'{redshift_details["database"]}'
+            )
+            return conn
+        except Exception as e:
+            print("Error connection to data warehouse")
+            raise OplogWorksError('Destination.redhsift', str(e))

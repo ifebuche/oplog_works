@@ -25,9 +25,12 @@ class Loader:
         data (dict): Data to be loaded, with keys as table/collection names and values as data in pandas DataFrame format.
     """
 
-    def __init__(self, mongo_conn, data):
+    def __init__(self, mongo_conn, data: dict, datalake: bool, datawarehouse: bool, aws: dict):
         self.mongo_conn = mongo_conn
         self.data = data
+        self.datalake = datalake
+        self.warehouse = datawarehouse
+        self.aws = aws
 
 
     @staticmethod
@@ -230,9 +233,9 @@ class Loader:
             dict: A summary of the loading operation, including lists of successfully 
                   and unsuccessfully loaded tables and any new incoming columns.
         """
-        validate_kwargs(
-            kwargs, ["user", "password", "host", "db", "port"], "load_warehouse"
-        )
+
+        required_params = ["user", "password", "host", "db", "port"]
+        validate_kwargs(kwargs, required_params=required_params, func_name="load_warehouse")
 
         print(kwargs)
         redshift_params = {
@@ -247,6 +250,7 @@ class Loader:
         successful_tables = []
         new_incoming = {}
         counter = 0
+
         #  = create_engine(f'postgresql://root:root@172.18.0.2:5432/postgres') #initialize enine
         for collection in self.data.keys():
             if collection != "metadata":
@@ -279,7 +283,7 @@ class Loader:
         engine.dispose()
         return outcome
 
-    def run(self, datalake=None, warehouse=None, **kwargs):
+    def run(self, **kwargs):
 
         """
             Executes the data loading process.
@@ -302,10 +306,18 @@ class Loader:
         # if datalake:
         #     run_details["datalake"] = self.load_datalake(**kwargs)
 
-        if warehouse:
-            run_details["datawarehouse"] = self.load_warehouse(
-                 **kwargs
-            )
+        if self.datalake and self.warehouse:
+            #datalake load
+            if self.datalake and not self.aws:
+                raise OplogWorksError('Loader.run', 'aws credentials were not provide for datalake operations.')
+            
+            run_details["datalake"] = self.load_datalake(**kwargs)
+
+            #dw load
+            run_details["datawarehouse"] = self.load_warehouse(**kwargs)  
+                      
+        elif self.warehouse and not self.datalake:
+            run_details["datawarehouse"] = self.load_warehouse(**kwargs)
             # write metadata
         return run_details
 
