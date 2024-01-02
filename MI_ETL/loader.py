@@ -4,7 +4,6 @@ from datetime import datetime as dt
 import awswrangler as wr
 import pandas as pd
 from sqlalchemy import inspect, text
-from psycopg2 import OperationalError
 
 from .Connector import Destination
 from .Error import OplogWorksError
@@ -168,8 +167,8 @@ class Loader:
                     # capture_exception(e)
                     return False, str(e) , columns_to_drop
             return True, "Transaction successful!", columns_to_drop
-        except OperationalError:
-            raise OplogWorksError('Loader.insert_update_record', 'bad or no connection to datawarehouse')
+        except Exception as e:
+            raise OplogWorksError('Loader.insert_update_record', str(e))
 
     def load_datalake(self, *args, **kwargs):
         """
