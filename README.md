@@ -100,93 +100,114 @@ To use MI-ETLx, a package that extracts incremental data and loads them to targe
 ### Example 1
 
 ```python
-from MI_ETLx.Connector import Source
-from MI_ETLx.data_extraction import DataExtraction
-from MI_ETLx.loader import Loader
+from MI_ETL.Connector import Source
+from MI_ETL.data_extraction import DataExtraction
+from MI_ETL.loader import Loader
 import os
 
-conn = Source.mongo(os.getenv('conn', None))
-# Check if the MongoDB connection was established successfully
-if conn:
+host = os.getenv('oplog_test_host')
+user = os.getenv('oplog_test_user')
+password = os.getenv('oplog_test_password')
+db = os.getenv('oplog_test_db')
 
-	# Set 'extract_all' to an empty list, indicating that data should be extracted
-    # from all collections within the specified database.
-	data_extraction = DataExtraction(connection=conn, extract_all=[], db='sample_analytics')
-	extracted_data = data_extraction.extract_oplog_data()
+required_params = {"host":host, "user":user, "password": password, "db":db}
 
-	# The MongoDB connection is also used to update the time metadata for the next run,
-	# ensuring that each run's timing information is accurately recorded.
-	loader = Loader(mongo_conn=conn, data=extracted_data)
+if all(required_params.values()):
+    conn = Source.mongo(os.getenv('oplog_test_source_url'))
 
-	# Provide connection to datawarehouse. NOTE !! only redshift and respective postgres dbs
-	# are supported as at this release
-	# Result holds meta data information about the load process highlighting if it passed or fail,
-	# schema information , e.t.c
-	result = loader.run(warehouse=True, bucket_name = 'case-study-testinterview', prefix='test',
-			user = 'user',
-			password=  'password',
-			host = 'host',
-			port = 'port',
-			db = 'database')
+    data_extraction = DataExtraction(connection=conn, extract_all=[], db='sample_analytics')
+    extracted_data = data_extraction.extract_oplog_data()
+
+    #Initiate loader
+    # The MongoDB connection is also used to update the time metadata for the next run,
+    # ensuring that each run's timing information is accurately recorded.
+    loader = Loader(mongo_conn=conn, data=extracted_data, datalake=False, datawarehouse=True, aws={})
+    
+    # Provide connection to datawarehouse. NOTE !! only redshift and respective postgres dbs
+    # are supported as at this release
+    # Result holds meta data information about the load process highlighting if it passed or fail,
+    # schema information , e.t.c
+    result = loader.run(host=host, user=user, password=password, db=db, port=5432)
+else:
+    for key, val in required_params.items():
+        if not val:
+            print(f"'{key}' is needed for the destination database connection")
 ```
 
 ### Example 2
 
 ```python
-from MI_ETLx.Connector import Source
-from MI_ETLx.data_extraction import DataExtraction
+#Example 2
+from MI_ETL.Connector import Source
+from MI_ETL.data_extraction import DataExtraction
+from MI_ETL.loader import Loader
 import os
 
-conn = Source.mongo(os.getenv('conn', None))
+host = os.getenv('oplog_test_host')
+user = os.getenv('oplog_test_user')
+password = os.getenv('oplog_test_password')
+db = os.getenv('oplog_test_db')
 
-# Check if the MongoDB connection was established successfully
-if conn:
-	# Intitialize data extraction from specified collections 'collection_1' and 'collection_2' within 'sample_analytics' # database.
-	data_extraction = DataExtraction(connection=conn, extract_all=['collection_1', 'collection_2'], db='sample_analytics')
-	extracted_data = data_extraction.extract_oplog_data()
+required_params = {"host":host, "user":user, "password": password, "db":db}
 
-	# Provide connection to datawarehouse. NOTE !! only redshift and respective postgres dbs
-	# are supported as at this release.
-	# Result holds meta data information about the load process highlighting if it passed or fail,
-	# schema information , e.t.c
-	result = loader.run(warehouse=True, bucket_name = 'case-study-testinterview', prefix='test',
-			user = 'user',
-			password=  'password',
-			host = 'host',
-			port = 'port',
-			db = 'database')
+if all(required_params.values()):
+    conn = Source.mongo(os.getenv('oplog_test_source_url'))
+    
+    # Intitialize data extraction from specified collections 'collection_1' and 'collection_2' within 'sample_analytics' database.
+    data_extraction = DataExtraction(connection=conn, extract_all=['collection_1', 'collection_2'], db='sample_analytics')
+    extracted_data = data_extraction.extract_oplog_data()
+
+    #Initiate loader
+    # The MongoDB connection is also used to update the time metadata for the next run,
+    # ensuring that each run's timing information is accurately recorded.
+    loader = Loader(mongo_conn=conn, data=extracted_data, datalake=False, datawarehouse=True, aws={})
+    
+    # Provide connection to datawarehouse. NOTE !! only redshift and respective postgres dbs
+    # are supported as at this release
+    # Result holds meta data information about the load process highlighting if it passed or fail,
+    # schema information , e.t.c
+    result = loader.run(host=host, user=user, password=password, db=db, port=5432)
+else:
+    for key, val in required_params.items():
+        if not val:
+            print(f"'{key}' is needed for the destination database connection")
 ```
 
 ### Example 3
 
 ```python
-from MI_ETLx.Connector import Source
-from MI_ETLx.data_extraction import DataExtraction
-from MI_ETLx.loader import Loader
+from MI_ETL.Connector import Source
+from MI_ETL.data_extraction import DataExtraction
+from MI_ETL.loader import Loader
 import os
 
-conn = Source.mongo(os.getenv('conn', None))
+host = os.getenv('oplog_test_host')
+user = os.getenv('oplog_test_user')
+password = os.getenv('oplog_test_password')
+db = os.getenv('oplog_test_db')
 
-# Check if the MongoDB connection was established successfully
-if conn:
+required_params = {"host":host, "user":user, "password": password, "db":db}
 
-	# Initialize data extraction from 'collection_1' and 'collection_2' in 'sample_analytics',
-	# extracting from data modified after '2023/12/28' (backfill date).
-	data_extraction = DataExtraction(connection=conn, extract_all=['collection_1', 'collection_2'],  db='sample_analytics', backfill='2023/12/28')
-	extracted_data = data_extraction.extract_oplog_data()
+if all(required_params.values()):
+    conn = Source.mongo(os.getenv('oplog_test_source_url'))
+    
+    # Initialize data extraction from 'collection_1' and 'collection_2' in 'sample_analytics',
+    # extracting from data modified after '2023/12/28' (backfill date).
+    data_extraction = DataExtraction(connection=conn, extract_all=['collection_1', 'collection_2'],  db='sample_analytics', backfill='2023/12/28')
+    extracted_data = data_extraction.extract_oplog_data()
 
-	# The MongoDB connection is also used to update the time metadata for the next run,
-	# ensuring that each run's timing information is accurately recorded.
-	loader = Loader(mongo_conn=conn, data=extracted_data)
-
-	# Provide connection to datawarehouse. NOTE !! only redshift and respective postgres dbs
-	# are supported as at this release.
-	# Result holds meta data information about the load process highlighting if it passed or fail,
-	# schema information , e.t.c
-	result = loader.run(warehouse=True, bucket_name = 'case-study-testinterview', prefix='test',
-			user = 'user',
-			password= 'password',
-			host = 'host',
-			port = 'port',
-			db = 'database')
+    #Initiate loader
+    # The MongoDB connection is also used to update the time metadata for the next run,
+    # ensuring that each run's timing information is accurately recorded.
+    loader = Loader(mongo_conn=conn, data=extracted_data, datalake=False, datawarehouse=True, aws={})
+    
+    # Provide connection to datawarehouse. NOTE !! only redshift and respective postgres dbs
+    # are supported as at this release
+    # Result holds meta data information about the load process highlighting if it passed or fail,
+    # schema information , e.t.c
+    result = loader.run(host=host, user=user, password=password, db=db, port=5432)
+else:
+    for key, val in required_params.items():
+        if not val:
+            print(f"'{key}' is needed for the destination database connection")
 ```
