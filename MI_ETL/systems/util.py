@@ -88,21 +88,21 @@ def append_timestamp(mongo_conn):
     collection.insert_one(new_document)
 
 
-def validate_kwargs(kwargs, required_params, func):
+def validate_kwargs(kwargs, required_params, func_name):
     """
     Validates the presence of required parameters in a dictionary.
 
     Args:
         kwargs (dict): The dictionary of keyword arguments.
         required_params (list): A list of required parameter names.
-        func (str): The name of the function for which the parameters are being validated.
+        func_name (str): The name of the function for which the parameters are being validated.
 
     Raises:
         OplogWorksError: If any of the required parameters are missing.
     """
     missing_params = [param for param in required_params if param not in kwargs]
     if missing_params:
-        raise OplogWorksError(func, f"{', '.join(missing_params)} are missing")
+        raise OplogWorksError(func_name, f"{', '.join(missing_params)} are missing")
 
 
 def validate_date_format(date_str: str):

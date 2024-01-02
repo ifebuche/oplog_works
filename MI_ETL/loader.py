@@ -1,5 +1,3 @@
-import json
-import os
 import random
 from datetime import datetime as dt
 
@@ -9,8 +7,7 @@ from sqlalchemy import inspect, text
 
 from .Connector import Destination
 from .Error import OplogWorksError
-from .systems.util import (schema_validation, update_loader_status,
-                           validate_kwargs)
+from .systems.util import (schema_validation, update_loader_status, validate_kwargs)
 
 class Loader:
     """
@@ -25,9 +22,12 @@ class Loader:
         data (dict): Data to be loaded, with keys as table/collection names and values as data in pandas DataFrame format.
     """
 
-    def __init__(self, mongo_conn, data):
+    def __init__(self, mongo_conn, data: dict, datalake: bool, datawarehouse: bool, aws: dict):
         self.mongo_conn = mongo_conn
         self.data = data
+        self.datalake = datalake
+        self.warehouse = datawarehouse
+        self.aws = aws
 
 
     @staticmethod
@@ -98,72 +98,77 @@ class Loader:
         #     df[i] = list(map(lambda x: json.dumps(x), df[i]))
         columns_to_drop = None
         print(f"Incoming table is {targetTable}")
-        if not inspect(engine).has_table(targetTable):
-            print(f"{targetTable} not found, creating...")
-            df.to_sql(targetTable, engine, index=False, if_exists="append")
-            print(f"{targetTable} created and loaded")
-        
-        else:
-            # schema validation
-            df, columns_to_drop = schema_validation(targetTable, engine, df)
 
-            create = f"create table if not exists {temp} (like {targetTable});"
-            drop = f"drop table {temp}"
-            transact = f"""
-                        begin transaction;
+        #first database connection use by psycopg2, listen for OperationalError
+        try:
+            if not inspect(engine).has_table(targetTable):
+            # if not engine.dialect.has_table(engine, targetTable):
+                print(f"{targetTable} not found, creating...")
+                df.to_sql(targetTable, engine, index=False, if_exists="append")
+                print(f"{targetTable} created and loaded")
+            else:
+                # schema validation
+                df, columns_to_drop = schema_validation(targetTable, engine, df)
 
-                        delete from {targetTable} using {temp} where {targetTable}.{pk} = {temp}.{pk};
+                create = f"create table if not exists {temp} (like {targetTable});"
+                drop = f"drop table {temp}"
+                transact = f"""
+                            begin transaction;
 
-                        insert into {targetTable} select * from {temp};
+                            delete from {targetTable} using {temp} where {targetTable}.{pk} = {temp}.{pk};
 
-                        drop table {temp};
+                            insert into {targetTable} select * from {temp};
 
-                        end transaction;
-                    """.replace(
-                "None", "NULL"
-            )
+                            drop table {temp};
 
-            # Commence update attempt
-            try:
-                print(f"Creating temp table {temp}")
-                create_response, transact_response = 0, 0
+                            end transaction;
+                        """.replace(
+                    "None", "NULL"
+                )
 
-                with engine.begin() as conne:
-                    create_res = conne.execute(text(create))
-                    create_response += create_res.rowcount
-                    if not create_response:
-                        msg = f"Failure creating {temp} table"
-                        print(msg)
-                        raise OplogWorksError(
-                            "insert_update_record()", f"\nError message => {msg}"
-                        )
-                        # capture_exception()
-                        return False, msg
+                # Commence update attempt
                 try:
-                    df.to_sql(temp, engine, index=False, if_exists="append")
+                    print(f"Creating temp table {temp}")
+                    create_response, transact_response = 0, 0
+
+                    with engine.begin() as conne:
+                        create_res = conne.execute(text(create))
+                        create_response += create_res.rowcount
+                        if not create_response:
+                            msg = f"Failure creating {temp} table"
+                            print(msg)
+                            raise OplogWorksError(
+                                "insert_update_record()", f"\nError message => {msg}"
+                            )
+                            # capture_exception()
+                            return False, msg
+                    try:
+                        df.to_sql(temp, engine, index=False, if_exists="append")
+                    except Exception as e:
+                        with engine.begin() as conne:
+                            conne.execute(text(drop))
+                            raise OplogWorksError(
+                                "insert_update_record()", f"\nError message => {str(e)}"
+                            )
+                            # # capture_exception()
+                            # return False, f"We could not load the temp table.\nErro: => {e}"
+
+                    with engine.begin() as conne:
+                        transact_res = conne.execute(text(transact))
+                        if transact_res:
+                            print("Transaction Successful")
+                            transact_response += transact_res.rowcount
+                    # update_loader_status(mongo_conn)
+                    return True, "Transaction successful!" , columns_to_drop
                 except Exception as e:
+                    msg = f"Problem writing to RedshiftConn: => {e}"
                     with engine.begin() as conne:
                         conne.execute(text(drop))
-                        raise OplogWorksError(
-                            "insert_update_record()", f"\nError message => {str(e)}"
-                        )
-                        # # capture_exception()
-                        # return False, f"We could not load the temp table.\nErro: => {e}"
-
-                with engine.begin() as conne:
-                    transact_res = conne.execute(text(transact))
-                    if transact_res:
-                        print("Transaction Successful")
-                        transact_response += transact_res.rowcount
-                # update_loader_status(mongo_conn)
-                return True, "Transaction successful!" , columns_to_drop
-            except Exception as e:
-                msg = f"Problem writing to RedshiftConn: => {e}"
-                with engine.begin() as conne:
-                    conne.execute(text(drop))
-                # capture_exception(e)
-                return False, str(e) , columns_to_drop
-        return True, "Transaction successful!", columns_to_drop
+                    # capture_exception(e)
+                    return False, str(e) , columns_to_drop
+            return True, "Transaction successful!", columns_to_drop
+        except Exception as e:
+            raise OplogWorksError('Loader.insert_update_record', str(e))
 
     def load_datalake(self, *args, **kwargs):
         """
@@ -230,9 +235,9 @@ class Loader:
             dict: A summary of the loading operation, including lists of successfully 
                   and unsuccessfully loaded tables and any new incoming columns.
         """
-        validate_kwargs(
-            kwargs, ["user", "password", "host", "db", "port"], "load_warehouse"
-        )
+
+        required_params = ["user", "password", "host", "db", "port"]
+        validate_kwargs(kwargs, required_params=required_params, func_name="load_warehouse")
 
         print(kwargs)
         redshift_params = {
@@ -247,6 +252,7 @@ class Loader:
         successful_tables = []
         new_incoming = {}
         counter = 0
+
         #  = create_engine(f'postgresql://root:root@172.18.0.2:5432/postgres') #initialize enine
         for collection in self.data.keys():
             if collection != "metadata":
@@ -279,7 +285,7 @@ class Loader:
         engine.dispose()
         return outcome
 
-    def run(self, datalake=None, warehouse=None, **kwargs):
+    def run(self, **kwargs):
 
         """
             Executes the data loading process.
@@ -302,10 +308,27 @@ class Loader:
         # if datalake:
         #     run_details["datalake"] = self.load_datalake(**kwargs)
 
-        if warehouse:
-            run_details["datawarehouse"] = self.load_warehouse(
-                 **kwargs
-            )
+        if self.datalake and self.warehouse:
+            #datalake load
+            if not self.aws:
+                raise OplogWorksError('Loader.run', 'aws credentials were not provide for datalake operations.')
+            
+            if type(self.aws) != dict:
+                raise OplogWorksError('Loader.run aws cloud validation', 'cloud params provided must be of type dict.')
+            
+            #ensure we have the required things for aws connect
+            required_params = ["aws_access_key_id", "aws_secret_access_key"]
+            missing_aws_params = [param for param in required_params if param not in self.aws.keys()]
+            if missing_aws_params:
+                raise OplogWorksError('Loader.run aws cloud validation', f'All of |{"| ".join(required_params)}| needed for aws connection.')
+            
+            run_details["datalake"] = self.load_datalake(**kwargs)
+
+            #dw load
+            run_details["datawarehouse"] = self.load_warehouse(**kwargs)  
+                      
+        elif self.warehouse and not self.datalake:
+            run_details["datawarehouse"] = self.load_warehouse(**kwargs)
             # write metadata
         return run_details
 
