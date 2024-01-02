@@ -318,7 +318,7 @@ class Loader:
             required_params = ["aws_access_key_id", "aws_secret_access_key"]
             missing_aws_params = [param for param in required_params if param not in self.aws.keys()]
             if missing_aws_params:
-                raise OplogWorksError('Loader.run aws cloud validation', f'All of {",".join(required_params)} needed for aws')
+                raise OplogWorksError('Loader.run aws cloud validation', f'All of {", ".join(required_params)} needed for aws connection.')
             
             run_details["datalake"] = self.load_datalake(**kwargs)
 
