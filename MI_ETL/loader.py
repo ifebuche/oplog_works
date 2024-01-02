@@ -13,7 +13,7 @@ from .systems.util import (schema_validation, update_loader_status,
                            validate_kwargs)
 
 class Loader:
-   """
+    """
     A class for handling the loading of data into data lakes and warehouses.
 
     Provides functionalities to upload data to Amazon S3 and insert or update records
@@ -26,14 +26,6 @@ class Loader:
     """
 
     def __init__(self, mongo_conn, data):
-        """
-        Initializes the Loader with MongoDB connection and data to be loaded.
-
-        Args:
-            mongo_conn (MongoClient): The MongoDB connection object.
-            data (dict): Data to be loaded, structured as a dictionary where keys are 
-                         collection/table names and values are Pandas DataFrames.
-        """
         self.mongo_conn = mongo_conn
         self.data = data
 
@@ -288,19 +280,20 @@ class Loader:
         return outcome
 
     def run(self, datalake=None, warehouse=None, **kwargs):
-         """
-        Executes the data loading process.
 
-        This method can load data into a data lake, a data warehouse, or both,
-        depending on the provided arguments.
+        """
+            Executes the data loading process.
 
-        Args:
-            datalake (bool): If True, loads data into a data lake.
-            warehouse (bool): If True, loads data into a data warehouse.
-            kwargs: Additional keyword arguments.
+            This method can load data into a data lake, a data warehouse, or both,
+            depending on the provided arguments.
 
-        Returns:
-            dict: A summary of the data loading operations.
+            Args:
+                datalake (bool): If True, loads data into a data lake.
+                warehouse (bool): If True, loads data into a data warehouse.
+                kwargs: Additional keyword arguments.
+
+            Returns:
+                dict: A summary of the data loading operations.
         """
         # docs should clear on what kwargs want to achieve
 
