@@ -1,8 +1,6 @@
 import boto3
 import certifi
-import psycopg2
 import pymongo
-# import snowflake.connector
 from sqlalchemy import create_engine
 from MI_ETL.Error import OplogWorksError
 
@@ -25,7 +23,7 @@ class Source:
             client.server_info()
             print("Connected")
         except pymongo.errors.ServerSelectionTimeoutError as e:
-            raise ConnectionError(f"Failed to connect to MongoDB: {e}")
+            raise OplogWorksError('Source.mongo', f'Error connecting to MongoDB - "{str(e)}')
 
         return client
 

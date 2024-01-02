@@ -7,8 +7,7 @@ from sqlalchemy import inspect, text
 
 from .Connector import Destination
 from .Error import OplogWorksError
-from .systems.util import (schema_validation, update_loader_status,
-                           validate_kwargs)
+from .systems.util import (schema_validation, update_loader_status, validate_kwargs)
 
 class Loader:
     """
