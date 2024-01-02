@@ -308,8 +308,17 @@ class Loader:
 
         if self.datalake and self.warehouse:
             #datalake load
-            if self.datalake and not self.aws:
+            if not self.aws:
                 raise OplogWorksError('Loader.run', 'aws credentials were not provide for datalake operations.')
+            
+            if type(self.aws) != dict:
+                raise OplogWorksError('Loader.run aws cloud validation', 'cloud params provided must be of type dict.')
+            
+            #ensure we have the required things for aws connect
+            required_params = ["aws_access_key_id", "aws_secret_access_key"]
+            missing_aws_params = [param for param in required_params if param not in self.aws.keys()]
+            if missing_aws_params:
+                raise OplogWorksError('Loader.run aws cloud validation', f'All of {",".join(required_params)} needed for aws')
             
             run_details["datalake"] = self.load_datalake(**kwargs)
 
