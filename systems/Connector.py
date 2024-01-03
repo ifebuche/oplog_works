@@ -2,7 +2,7 @@ from pymongo import MongoClient
 from sqlalchemy import create_engine
 import os
 
-open_machine = "mongodb+srv://nelson:gI5xU2OzRDHJcrsh@cluster0.oogfs.mongodb.net/?retryWrites=true&w=majority"
+open_machine = ""
 environment = os.getenv('ENVIRONMENTx', open_machine)
 
 if environment != 'highway':
