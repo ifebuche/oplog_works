@@ -239,7 +239,6 @@ class Loader:
         required_params = ["user", "password", "host", "db", "port"]
         validate_kwargs(kwargs, required_params=required_params, func_name="load_warehouse")
 
-        print(kwargs)
         redshift_params = {
             "user": kwargs["user"],
             "password": kwargs["password"],
