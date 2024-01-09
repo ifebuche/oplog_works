@@ -1,9 +1,8 @@
 import boto3
 import certifi
-import psycopg2
 import pymongo
-import snowflake.connector
 from sqlalchemy import create_engine
+from MI_ETL.Error import OplogWorksError
 
 
 class Source:
@@ -24,7 +23,7 @@ class Source:
             client.server_info()
             print("Connected")
         except pymongo.errors.ServerSelectionTimeoutError as e:
-            raise ConnectionError(f"Failed to connect to MongoDB: {e}")
+            raise OplogWorksError('Source.mongo', f'Error connecting to MongoDB - "{str(e)}')
 
         return client
 
@@ -52,24 +51,29 @@ class Destination:
         )
         return s3_client
 
-    def snowflake(snowflake_details):
-        print(f"Connecting to Snowflake")
-        conn = snowflake.connector.connect(
-            user=snowflake_details["user"],
-            password=snowflake_details["password"],
-            account=snowflake_details["account"],
-            warehouse=snowflake_details["warehouse"],
-            database=snowflake_details["database"],
-            schema=snowflake_details["schema"],
-        )
-        return conn
+    # def snowflake(snowflake_details):
+    #     print(f"Connecting to Snowflake")
+    #     conn = snowflake.connector.connect(
+    #         user=snowflake_details["user"],
+    #         password=snowflake_details["password"],
+    #         account=snowflake_details["account"],
+    #         warehouse=snowflake_details["warehouse"],
+    #         database=snowflake_details["database"],
+    #         schema=snowflake_details["schema"],
+    #     )
+    #     return conn
 
     @staticmethod
     def redshift(redshift_details):
-        print("connecting to redshift")
-        conn = create_engine(
-            f'postgresql://{redshift_details["user"]}:{redshift_details["password"]}@'
-            f'{redshift_details["host"]}:{redshift_details["port"]}/'
-            f'{redshift_details["database"]}'
-        )
-        return conn
+        print("connecting to data warehouse")
+        #This try/except is useless as psycopg2 does not try to validate the connection.
+        try:
+            conn = create_engine(
+                f'postgresql://{redshift_details["user"]}:{redshift_details["password"]}@'
+                f'{redshift_details["host"]}:{redshift_details["port"]}/'
+                f'{redshift_details["database"]}'
+            )
+            return conn
+        except Exception as e:
+            print("Error connection to data warehouse")
+            raise OplogWorksError('Destination.redhsift', str(e))

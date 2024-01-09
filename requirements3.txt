@@ -1,0 +1,7 @@
+boto3
+certifi
+psycopg2-binary
+pymongo
+SQLAlchemy
+pandas
+awswrangler
