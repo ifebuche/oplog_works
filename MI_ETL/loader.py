@@ -310,7 +310,7 @@ class Loader:
         if self.datalake and self.warehouse:
             #datalake load
             if not self.aws:
-                raise OplogWorksError('Loader.run', 'aws credentials were not provide for datalake operations.')
+                raise OplogWorksError('Loader.run', 'aws credentials were not provided for datalake operations.')
             
             if type(self.aws) != dict:
                 raise OplogWorksError('Loader.run aws cloud validation', 'cloud params provided must be of type dict.')
