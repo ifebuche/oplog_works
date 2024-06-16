@@ -9,7 +9,7 @@ with open('requirements3.txt', "r") as s:
 
 setup(
     name='MI_ETLx',
-    version='0.0.35',
+    version='0.0.37',
     author=['Paschal Amah', 'Nelson Ogbeide', 'Joseph Ojo'],
     author_email='ojofemijoseph@gmail.com, ogbeide331@gmail.com, agaley.fesh@gmail.com',
     # description=,
