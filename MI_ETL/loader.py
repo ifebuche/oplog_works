@@ -300,7 +300,7 @@ class Loader:
             Returns:
                 dict: A summary of the data loading operations.
         """
-        # docs should clear on what kwargs want to achieve
+        # docs should be clear on what kwargs want to achieve
 
         run_details = {}
 

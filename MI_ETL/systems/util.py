@@ -6,6 +6,7 @@ from datetime import datetime as dt
 from pymongo import DESCENDING
 import pandas as pd
 from bson import Timestamp
+from sqlalchemy import text
 
 from ..Error import OplogWorksError
 
@@ -137,7 +138,14 @@ def schema_validation(table_name, engine, df):
     Raises:
         OplogWorksError: If there are columns in the DataFrame that do not exist in the table schema.
     """
-    column_values = pd.read_sql(f"""select  * from {table_name} limit 1""", engine)
+    try:
+        #Using sqlalchemy execute pre 2.0
+        column_values = pd.read_sql(f"""select * from customers limit 1""", engine)
+    except AttributeError:
+        with engine.connect() as connection:
+            result = connection.execute(text(f"""SELECT * FROM customers LIMIT 1"""))
+            column_values = pd.DataFrame(result.fetchall(), columns=result.keys())
+        
 
     # Convert SQL table column names to a list
     columns_list = column_values.columns.tolist()
