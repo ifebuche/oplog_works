@@ -90,7 +90,7 @@ To see MI-ETLx in action on your own data:
 First step is to pip install the MI-ETLx package
 
 ```
-pip install MI_ETLx
+pip install -i https://test.pypi.org/simple/ MI-ETLx==0.0.36 --extra-index-url https://pypi.org/simple
 ```
 
 ## QUICK START
@@ -122,7 +122,7 @@ if all(required_params.values()):
     # The MongoDB connection is also used to update the time metadata for the next run,
     # ensuring that each run's timing information is accurately recorded.
     loader = Loader(mongo_conn=conn, data=extracted_data, datalake=False, datawarehouse=True, aws={})
-    
+
     # Provide connection to datawarehouse. NOTE !! only redshift and respective postgres dbs
     # are supported as at this release
     # Result holds meta data information about the load process highlighting if it passed or fail,
@@ -152,7 +152,7 @@ required_params = {"host":host, "user":user, "password": password, "db":db}
 
 if all(required_params.values()):
     conn = Source.mongo(os.getenv('oplog_test_source_url'))
-    
+
     # Intitialize data extraction from specified collections 'collection_1' and 'collection_2' within 'sample_analytics' database.
     data_extraction = DataExtraction(connection=conn, extract_all=['collection_1', 'collection_2'], db='sample_analytics')
     extracted_data = data_extraction.extract_oplog_data()
@@ -161,7 +161,7 @@ if all(required_params.values()):
     # The MongoDB connection is also used to update the time metadata for the next run,
     # ensuring that each run's timing information is accurately recorded.
     loader = Loader(mongo_conn=conn, data=extracted_data, datalake=False, datawarehouse=True, aws={})
-    
+
     # Provide connection to datawarehouse. NOTE !! only redshift and respective postgres dbs
     # are supported as at this release
     # Result holds meta data information about the load process highlighting if it passed or fail,
@@ -190,7 +190,7 @@ required_params = {"host":host, "user":user, "password": password, "db":db}
 
 if all(required_params.values()):
     conn = Source.mongo(os.getenv('oplog_test_source_url'))
-    
+
     # Initialize data extraction from 'collection_1' and 'collection_2' in 'sample_analytics',
     # extracting from data modified after '2023/12/28' (backfill date).
     data_extraction = DataExtraction(connection=conn, extract_all=['collection_1', 'collection_2'],  db='sample_analytics', backfill='2023/12/28')
@@ -200,7 +200,7 @@ if all(required_params.values()):
     # The MongoDB connection is also used to update the time metadata for the next run,
     # ensuring that each run's timing information is accurately recorded.
     loader = Loader(mongo_conn=conn, data=extracted_data, datalake=False, datawarehouse=True, aws={})
-    
+
     # Provide connection to datawarehouse. NOTE !! only redshift and respective postgres dbs
     # are supported as at this release
     # Result holds meta data information about the load process highlighting if it passed or fail,
