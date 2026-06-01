@@ -1,0 +1,29 @@
+# Build / packaging
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+
+# Env / secrets
+.env
+.env.*
+
+# IDE / notebooks
+.ipynb_checkpoints/
+.idea/
+.vscode/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+Thumbs.db
+.DS_Store
