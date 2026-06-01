@@ -42,3 +42,11 @@ def build_orchestrator(dynamodb_resource, bq_client, transform_registry: Transfo
         schema_aligner=SchemaAligner(),
         notifier=notifier,
     )
+
+
+# Typical usage in your job handler:
+#   specs = build_specs()
+#   registry = TransformRegistry()
+#   registry.register("my-source-table", your_transform_fn)
+#   orchestrator = build_orchestrator(dynamodb, bq_client, registry)
+#   orchestrator.run_all(specs)
