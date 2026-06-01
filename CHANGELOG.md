@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.0.38
+## 0.1.0
+
+First minor release of the unified CDC ETL framework. Supersedes unreleased `0.0.38` development builds.
 
 ### Added
 
@@ -9,6 +11,7 @@
 - `MongoOplogExtractor`, `MongoRunStateStore`, `RedshiftLoader`
 - Optional `MI_ETL/adapters/aws_lambda.py` reference handler
 - Optional extras: `[dynamo]`, `[bigquery]`, `[notify]`, `[dev]`
+- Example notebooks: `docs/examples/mongo_redshift_legacy.ipynb`, `docs/examples/dynamo_bq_example.ipynb`
 
 ### Changed
 
@@ -17,3 +20,7 @@
 ### Removed
 
 - Dependency on missing `requirements3.txt` (replaced by `requirements.txt`)
+
+## 0.0.38 (unreleased)
+
+Internal development tag; use **0.1.0** for installs and upgrades.
