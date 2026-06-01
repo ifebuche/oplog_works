@@ -46,7 +46,7 @@ from MI_ETL.transforms.registry import TransformRegistry
 # Your TableSpec list, transforms, and clients live in your application — see docs/examples/.
 ```
 
-Reference wiring: [docs/examples/wowzi_dynamo_bq.py](docs/examples/wowzi_dynamo_bq.py). Tests: `python -m unittest discover -s tests`.
+Reference wiring: [docs/examples/dynamo_bq_example.py](docs/examples/dynamo_bq_example.py). Tests: `python -m unittest discover -s tests`.
 
 **Mongo users upgrading to 0.0.38:** per-collection run state replaces the global `metadata.metadata` cursor — see [CHANGELOG.md](CHANGELOG.md).
 
