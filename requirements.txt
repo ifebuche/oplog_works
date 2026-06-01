@@ -1,0 +1,5 @@
+pandas>=1.5.0
+pymongo>=4.0.0
+sqlalchemy>=1.4.0
+certifi>=2022.0.0
+awswrangler>=2.0.0
