@@ -12,9 +12,9 @@ with open("requirements.txt", "r", encoding="utf-8") as f:
 
 setup(
     name="MI_ETLx",
-    version="0.0.38",
+    version="0.1.1",
     author=["Paschal Amah", "Nelson Ogbeide", "Joseph Ojo"],
-    author_email="ojofemijoseph@gmail.com, ogbeide331@gmail.com, agaley.fesh@gmail.com",
+    author_email="agaley.fesh@gmail.com, ojofemijoseph@gmail.com, ogbeide331@gmail.com",
     long_description=docs,
     long_description_content_type="text/markdown",
     url="https://github.com/ifebuche/oplog_works",

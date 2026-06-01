@@ -48,7 +48,7 @@ from MI_ETL.transforms.registry import TransformRegistry
 
 Reference wiring: [docs/examples/dynamo_bq_example.py](docs/examples/dynamo_bq_example.py). Jupyter walkthroughs: [docs/examples/](docs/examples/) (`mongo_redshift_legacy.ipynb`, `dynamo_bq_example.ipynb`). Tests: `python -m unittest discover -s tests`.
 
-**Mongo users upgrading to 0.0.38:** per-collection run state replaces the global `metadata.metadata` cursor — see [CHANGELOG.md](CHANGELOG.md).
+**Mongo users upgrading to 0.1.0:** per-collection run state replaces the global `metadata.metadata` cursor — see [CHANGELOG.md](CHANGELOG.md).
 
 ## Supported sources and destinations
 
@@ -73,7 +73,7 @@ Reference wiring: [docs/examples/dynamo_bq_example.py](docs/examples/dynamo_bq_e
 ## Installation
 
 ```bash
-pip install MI-ETLx==0.0.38
+pip install MI-ETLx==0.1.1
 
 # Optional capability groups
 pip install "MI-ETLx[dynamo,bigquery,notify]"
@@ -82,7 +82,7 @@ pip install "MI-ETLx[dynamo,bigquery,notify]"
 For TestPyPI:
 
 ```bash
-pip install -i https://test.pypi.org/simple/ MI-ETLx==0.0.38 --extra-index-url https://pypi.org/simple
+pip install -i https://test.pypi.org/simple/ MI-ETLx==0.1.1 --extra-index-url https://pypi.org/simple
 ```
 
 ## Quick start (legacy Mongo → Redshift API)
