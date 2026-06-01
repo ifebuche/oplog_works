@@ -73,7 +73,7 @@ Reference wiring: [docs/examples/dynamo_bq_example.py](docs/examples/dynamo_bq_e
 ## Installation
 
 ```bash
-pip install MI-ETLx==0.1.0
+pip install MI-ETLx==0.1.1
 
 # Optional capability groups
 pip install "MI-ETLx[dynamo,bigquery,notify]"
@@ -82,7 +82,7 @@ pip install "MI-ETLx[dynamo,bigquery,notify]"
 For TestPyPI:
 
 ```bash
-pip install -i https://test.pypi.org/simple/ MI-ETLx==0.1.0 --extra-index-url https://pypi.org/simple
+pip install -i https://test.pypi.org/simple/ MI-ETLx==0.1.1 --extra-index-url https://pypi.org/simple
 ```
 
 ## Quick start (legacy Mongo → Redshift API)

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+### Changed
+
+- Package metadata: author email order; `MANIFEST.in` includes `requirements.txt` for reproducible builds.
+
 ## 0.1.0
 
 First minor release of the unified CDC ETL framework. Supersedes unreleased `0.0.38` development builds.
@@ -23,4 +29,4 @@ First minor release of the unified CDC ETL framework. Supersedes unreleased `0.0
 
 ## 0.0.38 (unreleased)
 
-Internal development tag; use **0.1.0** for installs and upgrades.
+Internal development tag; use **0.1.1** (or **0.1.0**) for installs and upgrades.
